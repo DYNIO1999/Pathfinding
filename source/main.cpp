@@ -1,12 +1,9 @@
 #include <iostream>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <vulkan/vulkan.h>
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 
 int main()
-{
-
-
+{    
     return EXIT_SUCCESS;
 }
