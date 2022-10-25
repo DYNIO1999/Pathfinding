@@ -1,12 +1,12 @@
 #ifndef _CORE_APPLICATION_H_
 #define _CORE_APPLICATION_H_
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 //STL
 #include <iostream>
 
+
+//Own
+#include "../window/Window.h"
 
 
 namespace VulkanPathfinding{
@@ -29,6 +29,9 @@ private:
 
     bool m_enableValidation;
     bool m_isRunning;
+
+
+    int m_frameRate;
 };
 }
 #endif

@@ -5,8 +5,6 @@
 #include <iostream>
 namespace VulkanPathfinding
 {
-
-
 class Timer
 {
 public:
@@ -18,7 +16,7 @@ public:
 
 private:
     std::chrono::duration<float> m_currentTimeMeasured;
-    std::chrono::time_point<std::chrono::system_clock> m_start, m_end;
+    std::chrono::time_point<std::chrono::steady_clock> m_start, m_end;
     };    
 }
 #endif

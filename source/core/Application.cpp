@@ -20,7 +20,7 @@ namespace VulkanPathfinding{
         //Init Vulkan
         while (m_isRunning)
         {
-
+            
             
         }
         Shutdown();
