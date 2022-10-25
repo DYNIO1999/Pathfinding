@@ -27,6 +27,7 @@ add_compile_options(-Wall -Wextra)
 include_directories(thirdparty)
 include_directories(thirdparty/glm)
 include_directories(thirdparty/glfw/include/)
+include_directories(thirdparty/spdlog/include)
 include_directories(source)
 
 file (GLOB_RECURSE PROJECT_HEADERS source/*.hpp

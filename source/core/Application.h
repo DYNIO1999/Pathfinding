@@ -7,7 +7,7 @@
 
 //Own
 #include "../window/Window.h"
-
+#include "Logger.h"
 
 namespace VulkanPathfinding{
 class Application

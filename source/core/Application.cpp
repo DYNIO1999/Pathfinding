@@ -30,7 +30,9 @@ namespace VulkanPathfinding{
 
 
     void Application::Initialize(){
-        Timer timer;
+        int test;
+        Timer timer(GET_NAME(Initialize()));
+        Logger::Init();
         InitVulkan();
 
 
