@@ -9,14 +9,19 @@ namespace VulkanPathfinding{
     class Window
     {
     public:
-        Window(int width, int height, std::string title);
+        Window(const int& width, const int& height, const std::string&& title);
         ~Window();
+        void ProcessEvents();
         //void GetSurface();
+        
     private:
+        
         int m_width;
         int m_heigth;
-        std::string title;
+        std::string m_title;
         GLFWwindow* m_windowHandle;
+
+        
     };    
 }
 #endif

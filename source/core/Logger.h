@@ -24,6 +24,8 @@ namespace VulkanPathfinding
     };
 }
 // Core Logging Macros
+#define ERROR(exp, msg) assert(((void)msg, exp))
+
 #define APP_TRACE(...) VulkanPathfinding::Logger::GetLogger()->trace(__VA_ARGS__)
 #define APP_INFO(...) VulkanPathfinding::Logger::GetLogger()->info(__VA_ARGS__)
 #define APP_WARN(...) VulkanPathfinding::Logger::GetLogger()->warn(__VA_ARGS__)
