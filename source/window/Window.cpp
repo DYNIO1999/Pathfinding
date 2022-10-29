@@ -26,9 +26,6 @@ namespace VulkanPathfinding
         if(!m_windowHandle){
           ERROR(0, APP_ERROR("GLFW Window creation failed"));
         }
-
-
-//          glfwSwapInterval(1);
     }
     void Window::ProcessEvents(){
         glfwPollEvents();

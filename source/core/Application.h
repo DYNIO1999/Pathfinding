@@ -7,27 +7,28 @@
 
 //Own
 #include "../window/Window.h"
+#include "Timer.h"
 #include "Logger.h"
-
 namespace VulkanPathfinding{
 struct FPSCounter{
-    void CalculateFPS(float curTime){
-
-        if((curTime - lastFrameTime) > 1.0 || frames == 0){
-
-        }
-
-    }
     void Update(){
-        frames++;
+        frameCount++;
+        if (interval.GetElapsedSeconds() > 1.0f)
+        {
+            APP_INFO("TIMER: {}", interval.GetElapsedSeconds());
+            framePerSecond = frameCount;
+            frameCount = 0;
+            interval = Timer();
+        }
     }
-    int Fps(){
-        return framePerSecond;
-    }
+    
+    Timer interval;
+    int frameCount;
     int framePerSecond;
-    int frames;
-    int limitFramePerSecond{30}; //?
-    float lastFrameTime;
+
+    float frameElapsedTime;
+    float startFrameTime;
+    float endFrameTime;
 };
 
 
