@@ -1,6 +1,8 @@
 # VulkanPathfinding
 Engineer Thesis
 
+
+# DEADLINE [29/30/31]
 Timer [DONE]
     - Try better version 
 DeltaTime 
@@ -11,7 +13,6 @@ Create Window []
     - Callbacks
 Create Instance []
 Create Surface ??
-
 Choose Physical Device
 Choose Logical Device
 Setup Queues
