@@ -1,8 +1,8 @@
-#ifndef _CORE_TIME_H_
-#define _CORE_TIME_H_
+#ifndef _TIME_TIMER_H_
+#define _TIME_TIMER_H_
 #include <chrono>
 #include <thread>
-#include <iostream>
+#include <string>
 
 #define GET_NAME(obj) std::string(#obj)
 
@@ -11,8 +11,9 @@ namespace VulkanPathfinding
 class Timer
 {
 public:
-    Timer(std::string function);
-    Timer();
+    Timer(bool show, std::string function);
+    Timer(bool show);
+    
     ~Timer();
     float GetElapsedMiliseconds();
     float GetElapsedSeconds();
@@ -21,6 +22,7 @@ private:
     std::chrono::duration<float> m_currentTimeMeasured;
     std::chrono::time_point<std::chrono::steady_clock> m_start, m_end;
     std::string m_function;
+    bool m_showMeasuredTime;
     };    
 }
 #endif

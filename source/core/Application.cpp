@@ -15,7 +15,7 @@ namespace VulkanPathfinding{
     }
 
     void Application::Run(){
-        Timer timer;
+        Timer timer(true);
         Initialize();
 
 
@@ -25,15 +25,11 @@ namespace VulkanPathfinding{
         {
 
             //Delta Time
-            m_deltaTime.CalculateDeltaTime(static_cast<float>(glfwGetTime()));
-            m_deltaTime.Update();
+            m_deltaTime.Update(static_cast<float>(glfwGetTime()));
             APP_TRACE("Delta Time: {}", m_deltaTime.AsMiliSeconds());
             //Delta Time
             
-
-
             //FRAME START
-            
             //dooo update
             //doo render
             for (size_t i = 0; i < 10000000; i++)
@@ -41,14 +37,13 @@ namespace VulkanPathfinding{
                 
             }
             
-
             //FRAME END
-
             m_window->ProcessEvents(); //process events/inputs                        
             
-            
             m_fpsCounter.Update();
-            APP_TRACE("FPS {}", m_fpsCounter.framePerSecond );
+
+            if(m_fpsCounter.GetFPS()>0)
+                APP_TRACE("FPS {}", m_fpsCounter.GetFPS());
             
         }
         Shutdown();
@@ -57,7 +52,7 @@ namespace VulkanPathfinding{
 
 
     void Application::Initialize(){
-        Timer timer(GET_NAME(Initialize()));
+        Timer timer(true,GET_NAME(Initialize()));
         Logger::Init();
 
         m_window = std::make_shared<Window>(1600,900,std::move("VulkanPathfinding"));

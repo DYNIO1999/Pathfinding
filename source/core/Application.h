@@ -7,50 +7,14 @@
 
 //Own
 #include "../window/Window.h"
-#include "Timer.h"
+
+#include "../time/Timer.h"
+#include "../time/DeltaTime.h"
+#include "../time/FPSCounter.h"
+
 #include "Logger.h"
 namespace VulkanPathfinding{
-struct FPSCounter{
-    void Update(){
-        frameCount++;
-        if (interval.GetElapsedSeconds() > 1.0f)
-        {
-            APP_INFO("TIMER: {}", interval.GetElapsedSeconds());
-            framePerSecond = frameCount;
-            frameCount = 0;
-            interval = Timer();
-        }
-    }
-    
-    Timer interval;
-    int frameCount;
-    int framePerSecond;
 
-    float frameElapsedTime;
-    float startFrameTime;
-    float endFrameTime;
-};
-
-
-struct DeltaTime{
-
-    float deltaTime;
-    float currentTime;
-    float lastTime;
-    void Update(){
-        lastTime = currentTime;
-    }
-    void CalculateDeltaTime(float curTime){
-        currentTime = curTime;
-        deltaTime = currentTime - lastTime;
-    }
-    float AsMiliSeconds(){
-        return deltaTime*1000.0f;
-    }
-    float AsSeconds(){
-        return deltaTime;
-    }
-};
 class Application
 {
 public:
@@ -71,8 +35,8 @@ private:
     bool m_enableValidation;
     bool m_isRunning;
 
-    FPSCounter m_fpsCounter{};
-    DeltaTime m_deltaTime{};
+    FPSCounter m_fpsCounter;
+    DeltaTime m_deltaTime;
 
 };
 }

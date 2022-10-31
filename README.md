@@ -2,12 +2,11 @@
 Engineer Thesis
 
 
-# DEADLINE [29/30/31]
+# DEADLINE [/31/1]
 Timer [DONE]
-    - Try better version 
+    - Try better version [DONE]
 DeltaTime 
-    - Try with Timer
-FPS Counter []
+FPS Counter [DONE]
     - Try with Timer
 Create Window []
     - Callbacks
