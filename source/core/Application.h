@@ -21,7 +21,7 @@ public:
     Application(bool enableValidation);
     ~Application();
     void Run();
-    std::shared_ptr<Window> GetWindow(){return m_window;}
+    static std::shared_ptr<Window> GetWindow(){return m_window;}
 private:
     static std::shared_ptr<Window> m_window;
     
@@ -33,8 +33,7 @@ private:
     VkResult CreateVulkanInstance(bool enableValidation);
 
     bool m_enableValidation;
-    bool m_isRunning;
-
+    
     FPSCounter m_fpsCounter;
     DeltaTime m_deltaTime;
 

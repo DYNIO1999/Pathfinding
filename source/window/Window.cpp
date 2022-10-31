@@ -1,5 +1,6 @@
 #include "Window.h"
 #include "../core/Logger.h"
+#include "../input/Input.h"
 
 namespace VulkanPathfinding
 {
@@ -16,7 +17,7 @@ namespace VulkanPathfinding
         int check=glfwInit(); 
         if (check==0)
         {
-            ERROR(check, APP_ERROR("GLFW Initialization failed"));
+            CHECK_ERROR(check, APP_ERROR("GLFW Initialization failed"));
         }
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -24,8 +25,12 @@ namespace VulkanPathfinding
         m_windowHandle = glfwCreateWindow(m_width, m_heigth, m_title.c_str(),nullptr,nullptr);
         
         if(!m_windowHandle){
-          ERROR(0, APP_ERROR("GLFW Window creation failed"));
+            CHECK_ERROR(APP_ERROR_VALUE, APP_ERROR("GLFW Window creation failed"));
         }
+
+        glfwSetWindowSizeCallback(m_windowHandle,WindowSizeCallback);
+        glfwSetWindowCloseCallback(m_windowHandle, WindowCloseCallback);
+
     }
     void Window::ProcessEvents(){
         glfwPollEvents();
@@ -34,5 +39,13 @@ namespace VulkanPathfinding
     {
         glfwDestroyWindow(m_windowHandle);
         glfwTerminate();
+    }
+    void Window::WindowCloseCallback(GLFWwindow *window){
+        APP_INFO("WINDOW CLOSED");
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+     void Window::WindowSizeCallback(GLFWwindow *window, int width, int height){
+        (void)window;
+        APP_INFO("RESIZED WIDTH:{} HEIGHT:{}", width, height);
     }
 }

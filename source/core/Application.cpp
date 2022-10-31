@@ -1,12 +1,11 @@
 #include "Application.h"
-
+#include "../input/Input.h"
 namespace VulkanPathfinding{
 
     std::shared_ptr<Window> Application::m_window;
 
     Application::Application(bool enableValidation)
-    :m_enableValidation(enableValidation),
-    m_isRunning(true)
+    :m_enableValidation(enableValidation)
     {
     
     }
@@ -15,35 +14,34 @@ namespace VulkanPathfinding{
     }
 
     void Application::Run(){
-        Timer timer(true);
+        //Timer timer(true);
         Initialize();
 
 
 
         //Init Vulkan
-        while (m_isRunning)
+        while (m_window->IsOpen())
         {
 
             //Delta Time
             m_deltaTime.Update(static_cast<float>(glfwGetTime()));
-            APP_TRACE("Delta Time: {}", m_deltaTime.AsMiliSeconds());
+            //APP_TRACE("Delta Time: {}", m_deltaTime.AsMiliSeconds());
             //Delta Time
             
             //FRAME START
             //dooo update
             //doo render
-            for (size_t i = 0; i < 10000000; i++)
-            {
-                
-            }
-            
+          
+            //auto [x,y] = Input::MousePosition();
+            //APP_INFO("MOUSE_POSITION  X:{} Y:{}",x,y);
+
             //FRAME END
             m_window->ProcessEvents(); //process events/inputs                        
             
             m_fpsCounter.Update();
-
-            if(m_fpsCounter.GetFPS()>0)
-                APP_TRACE("FPS {}", m_fpsCounter.GetFPS());
+            
+            //if(m_fpsCounter.GetFPS()>0)
+            //    APP_TRACE("FPS {}", m_fpsCounter.GetFPS());
             
         }
         Shutdown();

@@ -12,8 +12,13 @@ namespace VulkanPathfinding{
         Window(const int& width, const int& height, const std::string&& title);
         ~Window();
         void ProcessEvents();
+        bool IsOpen() const { return !glfwWindowShouldClose(m_windowHandle);}
         //void GetSurface();
-        
+        GLFWwindow* GetWindowHandle() const {return m_windowHandle;}
+
+        static void WindowCloseCallback(GLFWwindow *window);
+        static void WindowSizeCallback(GLFWwindow *window, int width, int height);
+
     private:
         
         int m_width;
