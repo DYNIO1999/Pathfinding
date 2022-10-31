@@ -12,7 +12,11 @@
 #include "../time/DeltaTime.h"
 #include "../time/FPSCounter.h"
 
+#include "../renderer/VulkanContext.h"
+
 #include "Logger.h"
+
+
 namespace VulkanPathfinding{
 
 class Application
@@ -21,18 +25,16 @@ public:
     Application(bool enableValidation);
     ~Application();
     void Run();
+
     static std::shared_ptr<Window> GetWindow(){return m_window;}
+    static bool IsValidationEnabled() { return m_enableValidation; }
+
 private:
     static std::shared_ptr<Window> m_window;
-    
     void Initialize();
     void Shutdown();
 
-    void InitVulkan();
-    
-    VkResult CreateVulkanInstance(bool enableValidation);
-
-    bool m_enableValidation;
+    static bool m_enableValidation;
     
     FPSCounter m_fpsCounter;
     DeltaTime m_deltaTime;

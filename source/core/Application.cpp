@@ -3,10 +3,11 @@
 namespace VulkanPathfinding{
 
     std::shared_ptr<Window> Application::m_window;
+    bool Application::m_enableValidation = false;
 
     Application::Application(bool enableValidation)
-    :m_enableValidation(enableValidation)
     {
+        m_enableValidation = enableValidation;
     
     }
     Application::~Application(){
@@ -51,19 +52,24 @@ namespace VulkanPathfinding{
 
     void Application::Initialize(){
         Timer timer(true,GET_NAME(Initialize()));
+        
         Logger::Init();
 
         m_window = std::make_shared<Window>(1600,900,std::move("VulkanPathfinding"));
 
-        InitVulkan();
-    }
-    void Application::Shutdown(){
+        auto &vulkanContext = VulkanContext::Get();
+        
+        vulkanContext.Initialize();
+
+
 
     }
-    
-    void Application::InitVulkan(){
+    void Application::Shutdown(){
         
+        auto &vulkanContext = VulkanContext::Get();
+        vulkanContext.Shutdown();
+
+
     }
-    
 }
 
