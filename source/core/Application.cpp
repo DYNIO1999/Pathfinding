@@ -51,6 +51,7 @@ namespace VulkanPathfinding{
 
 
     void Application::Initialize(){
+        
         Timer timer(true,GET_NAME(Initialize()));
         
         Logger::Init();
@@ -65,9 +66,13 @@ namespace VulkanPathfinding{
 
         vulkanContext.SelectPhysicalDevice();
         vulkanContext.CreateLogicalDevice();
-
-
-
+        vulkanContext.InitSwapChain();
+        vulkanContext.CreateImageViews();
+        vulkanContext.CreateCommandPools();
+        vulkanContext.CreateCommandBuffers();
+        vulkanContext.CreateSynchronizationObjects();
+        vulkanContext.SetupRenderPass();
+        vulkanContext.CreateFrameBuffers();
     }
     void Application::Shutdown(){
         

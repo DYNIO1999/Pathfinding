@@ -4,10 +4,13 @@
 #include <vector>
 #include <optional>
 #include <set>
+#include <limits>
 
 #include "VulkanDebug.h" 
 
 namespace VulkanPathfinding{
+
+const int MAX_FRAMES_IN_FLIGHT = 2;    
 
 struct QueueFamilyIndices
 {
@@ -41,14 +44,19 @@ public:
 
     void SelectPhysicalDevice();
     void CreateLogicalDevice();
-
+    void InitSwapChain();
+    void CreateImageViews();
+    void CreateCommandPools();
+    void CreateCommandBuffers();
+    void CreateSynchronizationObjects();
+    void SetupRenderPass();
+    void CreateFrameBuffers();
+    
 
 private:
 
 
     QueueFamilyIndices FindQueueFamily();
-
-    //Private Methods Vulkan
     std::vector<const char*> GetRequiredLayers();
     std::vector<const char*> GetRequiredExtensions();
     
@@ -66,11 +74,46 @@ private:
 
     std::vector<VkQueueFamilyProperties> m_queueFamilyProperties;
 
-    //Logical device
-    VkDevice m_vulkanlogicalDeviceHandle;
-    //Surface
+    std::vector<const char *> m_deviceExtensions;
 
+    //Logical device
+    VkDevice m_vulkanLogicalDeviceHandle;
+    //Surface
     VkSurfaceKHR m_surfaceHandle;
+    //Queues 
+    VkQueue m_vulkanGraphicsQueueHandle;
+    VkQueue m_vulkanPresentationQueueHandle;
+
+
+
+    //SwapChain
+    VkSurfaceCapabilitiesKHR m_vulkanSwapchainCapabilities;   
+    std::vector<VkSurfaceFormatKHR> m_vulkanSwapchainFormats;
+    std::vector<VkPresentModeKHR> m_vulkanSwapchainPresentModes;
+
+    VkFormat m_vulkanCurrentSwapChainImageFormat;
+    VkExtent2D m_vulkanCurrentSwapChainExtent;
+
+    uint32_t m_vulkanSwapChainImagesCount;
+    std::vector<VkImage> m_vulkanSwapChainImages;
+    std::vector<VkImageView> m_vulkanSwapChainImageViews;
+
+    VkSwapchainKHR m_vulkanSwapChainHandle;
+    //
+    //Command Pool
+    VkCommandPool m_vulkanCommandPoolHandle;
+
+    //Command Buffer
+    std::vector<VkCommandBuffer> m_vulkanCommandBuffers;
+
+    //WaitFences
+    std::vector<VkFence> m_vulkanWaitFences;
+
+
+    //RenderPass
+    VkRenderPass m_vulkanRenderPassHandle;
+    //Framebuffers
+    std::vector<VkFramebuffer> m_vulkanFrameBuffers;
 };
 }
 #endif

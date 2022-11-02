@@ -12,23 +12,24 @@ Create Window [DONE]
     - Callbacks
 Input [DONE]
 
-# DEADLINE [/31/1/2]
 Engine initialization | Boilerplate
     Create Instance []
         - enable validation layers [DONE]
         - instance extensions [DONE]
         - error logger [DONE]
-    Create Surface []
-    
-    Choose Physical Device []
+    Create Surface [DONE]
+    Choose Physical Device [DONE]
         - query available devices [DONE]
         - find the best performing one [DONE]
-        - query the features of device
-    Choose Logical Device []
-    
-    Create Surface []
+        - query the features of device [DONE]
+    Choose Logical Device [DONE]
+    Setup Queues [DONE]
+
+# DEADLINE [/2/3]
+
     Setup Swap chain []
-    Setup Queues []
+    Swap chain recreation []
+    
 
 # DEADLINE []
 ImGUI Support

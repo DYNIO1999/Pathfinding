@@ -20,6 +20,7 @@ namespace VulkanPathfinding{
         static void WindowSizeCallback(GLFWwindow *window, int width, int height);
 
         void CreateSurface();
+        std::pair<int,int> GetWindowSize(){return {m_width, m_heigth};}
     private:
         
         int m_width;
