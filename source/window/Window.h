@@ -19,6 +19,7 @@ namespace VulkanPathfinding{
         static void WindowCloseCallback(GLFWwindow *window);
         static void WindowSizeCallback(GLFWwindow *window, int width, int height);
 
+        void CreateSurface();
     private:
         
         int m_width;

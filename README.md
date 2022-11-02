@@ -15,14 +15,20 @@ Input [DONE]
 # DEADLINE [/31/1/2]
 Engine initialization | Boilerplate
     Create Instance []
-     -  enable validation layers
-     -  instance extensions
-     -  error logger 
+        - enable validation layers [DONE]
+        - instance extensions [DONE]
+        - error logger [DONE]
     Create Surface []
+    
     Choose Physical Device []
+        - query available devices [DONE]
+        - find the best performing one [DONE]
+        - query the features of device
     Choose Logical Device []
-    Setup Queues []
+    
+    Create Surface []
     Setup Swap chain []
+    Setup Queues []
 
 # DEADLINE []
 ImGUI Support

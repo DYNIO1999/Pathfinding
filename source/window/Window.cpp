@@ -1,7 +1,7 @@
 #include "Window.h"
 #include "../core/Logger.h"
 #include "../input/Input.h"
-
+#include "../renderer/VulkanContext.h"
 namespace VulkanPathfinding
 {
 
@@ -44,8 +44,14 @@ namespace VulkanPathfinding
         APP_INFO("WINDOW CLOSED");
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
-     void Window::WindowSizeCallback(GLFWwindow *window, int width, int height){
+    void Window::WindowSizeCallback(GLFWwindow *window, int width, int height){
         (void)window;
         APP_INFO("RESIZED WIDTH:{} HEIGHT:{}", width, height);
+    }
+    void Window::CreateSurface(){
+        if (glfwCreateWindowSurface(VulkanContext::Get().GetInstanceHandle(), m_windowHandle, nullptr, VulkanContext::Get().GetSurfaceHandle()) != VK_SUCCESS)
+        {
+            CHECK_ERROR(APP_ERROR_VALUE, APP_ERROR("Failed to create window surface!"));
+        }
     }
 }

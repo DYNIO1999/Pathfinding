@@ -60,6 +60,11 @@ namespace VulkanPathfinding{
         auto &vulkanContext = VulkanContext::Get();
         
         vulkanContext.Initialize();
+        
+        m_window->CreateSurface();
+
+        vulkanContext.SelectPhysicalDevice();
+        vulkanContext.CreateLogicalDevice();
 
 
 
