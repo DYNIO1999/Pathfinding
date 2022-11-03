@@ -25,33 +25,34 @@ Engine initialization | Boilerplate
     Choose Logical Device [DONE]
     Setup Queues [DONE]
 
-# DEADLINE [/2/3]
+# DEADLINE [/3/4/5/6/7]
     Setup Swap chain [DONE]
     Pipeline [DONE]
     RecordingCommands [DONE]
     Synchronization [DONE]
     Drawing Triangle [DONE]
     Swap chain recreation []
+    VertexBuffers [] 
+    IndexBuffers []
+    Uniforms []
 
-# DEADLINE [/4/5/6]
-    Code Refactoring []
-    VertexBuffers
-    IndexBuffers
-    Uniforms
-    Grid
-    Camera 3D 
-    CubeMap
-    ComputePipeline
+    ComputePipeline[]    
     
+    Textures [] ??
+    Mainly Test Out
+    Code Refactoring []
+# DEADLINE [/8/9/10/11/12/13/14]
+
+    Grid []
+    Camera 3D [] 
+    CubeMap []
     Abstraction?
 
-# DEADLINE [/7/8/9]
+# DEADLINE [15/16/17/18/19/20]
     ComputePipeline
     Pathfinding GPU
     Pathfinding CPU side?
 
-# DEADLINE [15]
-    Start GPU Pathfinding
 
 
 # DEADLINE []
