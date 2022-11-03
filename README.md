@@ -27,20 +27,22 @@ Engine initialization | Boilerplate
 
 # DEADLINE [/2/3]
     Setup Swap chain [DONE]
-    Pipeline []
-    RecordingCommands []
-    Synchronization []
-    Drawing Triangle []
+    Pipeline [DONE]
+    RecordingCommands [DONE]
+    Synchronization [DONE]
+    Drawing Triangle [DONE]
     Swap chain recreation []
-    Abstraction?
 
 # DEADLINE [/4/5/6]
+    Code Refactoring []
     VertexBuffers
     IndexBuffers
     Uniforms
     Grid
     Camera 3D 
     CubeMap
+    ComputePipeline
+    
     Abstraction?
 
 # DEADLINE [/7/8/9]

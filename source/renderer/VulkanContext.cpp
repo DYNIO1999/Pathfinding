@@ -318,7 +318,7 @@ namespace VulkanPathfinding{
             extent = actualExtent;
         }
 
-        uint32_t imageCount = m_vulkanSwapchainCapabilities.minImageCount + 1;
+        uint32_t imageCount = m_vulkanSwapchainCapabilities.minImageCount+1;
 
         if (m_vulkanSwapchainCapabilities.maxImageCount > 0 && imageCount > m_vulkanSwapchainCapabilities.maxImageCount)
         {
@@ -411,7 +411,7 @@ namespace VulkanPathfinding{
         }
     }
     void VulkanContext::CreateCommandBuffers(){
-        m_vulkanCommandBuffers.resize(m_vulkanSwapChainImages.size());
+        m_vulkanCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
         
         VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
         commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -423,8 +423,7 @@ namespace VulkanPathfinding{
             ,APP_ERROR("Failed to create command buffers!")
             )
 
-        APP_WARN("IMAGE SIZE: {} COMMAND BUFFER SIZE: {}", m_vulkanSwapChainImages.size(), m_vulkanCommandBuffers.size());
-
+        APP_WARN("IMAGE SIZE: {} COMMAND BUFFER SIZE: {}", MAX_FRAMES_IN_FLIGHT, MAX_FRAMES_IN_FLIGHT);
     }
     void VulkanContext::CreateSynchronizationObjects(){
 
@@ -435,43 +434,19 @@ namespace VulkanPathfinding{
         m_presentCompleteSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
         m_renderCompleteSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
 
-        VK_CHECK_RESULT(vkCreateSemaphore(m_vulkanLogicalDeviceHandle, &semaphoreCreateInfo, nullptr, &m_presentCompleteSemaphore), APP_ERROR("Failed to create vulkan semaphore!"));
 
-        VK_CHECK_RESULT(vkCreateSemaphore(m_vulkanLogicalDeviceHandle, &semaphoreCreateInfo, nullptr, &m_renderCompleteSemaphore), APP_ERROR("Failed to create vulkan semaphore!"));
 
         VkFenceCreateInfo fenceCreateInfo{};
         fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        m_queueCompleteFences.resize(m_vulkanCommandBuffers.size());
-        for (auto &fence : m_queueCompleteFences)
+        m_queueCompleteFences.resize(MAX_FRAMES_IN_FLIGHT);
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            VK_CHECK_RESULT(vkCreateFence(m_vulkanLogicalDeviceHandle, &fenceCreateInfo, nullptr, &fence), APP_ERROR("Failed to create vulkan fences!"));
+            VK_CHECK_RESULT(vkCreateSemaphore(m_vulkanLogicalDeviceHandle, &semaphoreCreateInfo, nullptr, &m_presentCompleteSemaphore[i]), APP_ERROR("Failed to create vulkan semaphore!"));
+            VK_CHECK_RESULT(vkCreateSemaphore(m_vulkanLogicalDeviceHandle, &semaphoreCreateInfo, nullptr, &m_renderCompleteSemaphore[i]), APP_ERROR("Failed to create vulkan semaphore!"));
+            VK_CHECK_RESULT(vkCreateFence(m_vulkanLogicalDeviceHandle, &fenceCreateInfo, nullptr, &m_queueCompleteFences[i]), APP_ERROR("Failed to create vulkan fences!"));
         }
-
-        /*
-            // Setting up Semaphores and Fences to manage the frames in the the triple buffer swapchain
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-    imagesInFlight.resize(swapChainImages.size(), VK_NULL_HANDLE);
-
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-
-            throw std::runtime_error("failed to create synchronization objects for a frame!");
-        }
-    }
-        */
     }
 
     void VulkanContext::SetupRenderPass(){
@@ -689,7 +664,10 @@ namespace VulkanPathfinding{
 
     void VulkanContext::Draw(){
 
-        VkResult acquire = vkAcquireNextImageKHR(m_vulkanLogicalDeviceHandle, m_vulkanSwapChainHandle, UINT64_MAX, m_presentCompleteSemaphore, (VkFence) nullptr, &m_currentActiveFrameBuffer);
+        VK_CHECK_RESULT(vkWaitForFences(m_vulkanLogicalDeviceHandle, 1, &m_queueCompleteFences[m_currentActiveFrameBuffer], VK_TRUE, UINT64_MAX), APP_ERROR("Failed to wait for Vulkan Fence!"));
+        VK_CHECK_RESULT(vkResetFences(m_vulkanLogicalDeviceHandle, 1, &m_queueCompleteFences[m_currentActiveFrameBuffer]), APP_ERROR("Failed to reset Vulkan Fence!"));
+        uint32_t imageIndex;
+        VkResult acquire = vkAcquireNextImageKHR(m_vulkanLogicalDeviceHandle, m_vulkanSwapChainHandle, UINT64_MAX, m_presentCompleteSemaphore[m_currentActiveFrameBuffer], (VkFence) nullptr, &imageIndex);
         if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR)))
         {
             VK_CHECK_RESULT(acquire, APP_ERROR("Failed to acquire next image from Swap Chain"));
@@ -698,8 +676,7 @@ namespace VulkanPathfinding{
 
         APP_ERROR("INDEX {}", m_currentActiveFrameBuffer);
         // Use a fence to wait until the command buffer has finished execution before using it again
-        VK_CHECK_RESULT(vkWaitForFences(m_vulkanLogicalDeviceHandle, 1, &m_queueCompleteFences[m_currentActiveFrameBuffer], VK_TRUE, UINT64_MAX), APP_ERROR("Failed to wait for Vulkan Fence!"));
-        VK_CHECK_RESULT(vkResetFences(m_vulkanLogicalDeviceHandle, 1, &m_queueCompleteFences[m_currentActiveFrameBuffer]), APP_ERROR("Failed to reset Vulkan Fence!"));
+        
 
         // Pipeline stage at which the queue submission will wait (via pWaitSemaphores)
         VkPipelineStageFlags waitStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -712,8 +689,8 @@ namespace VulkanPathfinding{
         submitInfo.pCommandBuffers = &m_vulkanCommandBuffers[m_currentActiveFrameBuffer]; // Command buffers(s) to execute in this batch (submission)
         submitInfo.commandBufferCount = 1;                           // One command buffer
 
-        submitInfo.pWaitSemaphores = &m_presentCompleteSemaphore; // Semaphore(s) to wait upon before the submitted command buffer starts executing
-        submitInfo.pSignalSemaphores = &m_renderCompleteSemaphore; // Semaphore(s) to be signaled when command buffers have completed
+        submitInfo.pWaitSemaphores = &m_presentCompleteSemaphore[m_currentActiveFrameBuffer];  // Semaphore(s) to wait upon before the submitted command buffer starts executing
+        submitInfo.pSignalSemaphores = &m_renderCompleteSemaphore[m_currentActiveFrameBuffer]; // Semaphore(s) to be signaled when command buffers have completed
 
         // Submit to the graphics queue passing a wait fence
         VK_CHECK_RESULT(vkQueueSubmit(m_vulkanGraphicsQueueHandle, 1, &submitInfo, m_queueCompleteFences[m_currentActiveFrameBuffer]), APP_ERROR("Failed to submit to Vulkan Queue!"));
@@ -723,16 +700,17 @@ namespace VulkanPathfinding{
         presentInfo.pNext = NULL;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &m_vulkanSwapChainHandle;
-        presentInfo.pImageIndices = &m_currentActiveFrameBuffer;
+        presentInfo.pImageIndices = &imageIndex;
         // Check if a wait semaphore has been specified to wait for before presenting the image
-        if (m_renderCompleteSemaphore != VK_NULL_HANDLE)
+        if (m_renderCompleteSemaphore[m_currentActiveFrameBuffer] != VK_NULL_HANDLE)
         {
-            presentInfo.pWaitSemaphores = &m_renderCompleteSemaphore;
+            presentInfo.pWaitSemaphores = &m_renderCompleteSemaphore[m_currentActiveFrameBuffer];
             presentInfo.waitSemaphoreCount = 1;
         }
 
 
+        VK_CHECK_RESULT(vkQueuePresentKHR(m_vulkanGraphicsQueueHandle, &presentInfo), APP_ERROR("Failed present framebuffer!"));
+
         m_currentActiveFrameBuffer = (m_currentActiveFrameBuffer + 1) % MAX_FRAMES_IN_FLIGHT;
-        VK_CHECK_RESULT(vkQueuePresentKHR(m_vulkanGraphicsQueueHandle, &presentInfo), APP_ERROR("Failed present framebuffer!"))
     }
 }
