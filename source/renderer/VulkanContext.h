@@ -5,12 +5,15 @@
 #include <optional>
 #include <set>
 #include <limits>
+#include <fstream>
 
 #include "VulkanDebug.h" 
 
 namespace VulkanPathfinding{
 
-const int MAX_FRAMES_IN_FLIGHT = 2;    
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
+
 
 struct QueueFamilyIndices
 {
@@ -26,6 +29,8 @@ struct QueueFamilyIndices
 class VulkanContext
 {
 public:
+    static std::vector<char> ReadFile(const std::string &path);
+
     static VulkanContext &Get()
     {
         static VulkanContext instance; 
@@ -51,6 +56,10 @@ public:
     void CreateSynchronizationObjects();
     void SetupRenderPass();
     void CreateFrameBuffers();
+    void CreateGraphicsPipeline();
+    void RecordCommandBuffers();
+
+    void Draw();
     
 
 private:
@@ -106,14 +115,34 @@ private:
     //Command Buffer
     std::vector<VkCommandBuffer> m_vulkanCommandBuffers;
 
-    //WaitFences
-    std::vector<VkFence> m_vulkanWaitFences;
+    // Semaphores
+    // Used to coordinate operations within the graphics queue and ensure correct command ordering
+    std::vector<VkSemaphore> m_presentCompleteSemaphore;
+    std::vector<VkSemaphore> m_renderCompleteSemaphore;
+
+    // Fences
+    // Used to check the completion of queue operations (e.g. command buffer execution)
+    std::vector<VkFence> m_queueCompleteFences;
 
 
     //RenderPass
     VkRenderPass m_vulkanRenderPassHandle;
     //Framebuffers
     std::vector<VkFramebuffer> m_vulkanFrameBuffers;
+
+    //Create Shader Module
+    VkShaderModule CreateShaderModule(const std::vector<char> &code);
+
+    //Pipeline Layout
+    VkPipelineLayout m_vulkanPipelineLayoutHandle;
+
+    //Pipeline Handle
+    VkPipeline m_vulkanGraphicsPipelineHandle;
+
+    //Active Current FrameBuffer Index
+    uint32_t m_currentActiveFrameBuffer = 0;
 };
+
+
 }
 #endif

@@ -18,7 +18,7 @@ namespace VulkanPathfinding{
         //Timer timer(true);
         Initialize();
 
-
+        auto &vulkanContext = VulkanContext::Get();
 
         //Init Vulkan
         while (m_window->IsOpen())
@@ -40,7 +40,8 @@ namespace VulkanPathfinding{
             m_window->ProcessEvents(); //process events/inputs                        
             
             m_fpsCounter.Update();
-            
+            vulkanContext.Draw();
+
             //if(m_fpsCounter.GetFPS()>0)
             //    APP_TRACE("FPS {}", m_fpsCounter.GetFPS());
             
@@ -73,6 +74,9 @@ namespace VulkanPathfinding{
         vulkanContext.CreateSynchronizationObjects();
         vulkanContext.SetupRenderPass();
         vulkanContext.CreateFrameBuffers();
+        vulkanContext.CreateGraphicsPipeline();
+        vulkanContext.RecordCommandBuffers();
+
     }
     void Application::Shutdown(){
         

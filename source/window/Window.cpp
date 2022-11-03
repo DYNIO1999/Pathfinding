@@ -21,6 +21,7 @@ namespace VulkanPathfinding
         }
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         m_windowHandle = glfwCreateWindow(m_width, m_heigth, m_title.c_str(),nullptr,nullptr);
         
