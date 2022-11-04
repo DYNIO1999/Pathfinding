@@ -60,10 +60,10 @@ public:
     void RecordCommandBuffers();
 
     void Draw();
-    
+    void RecreateSwapChain();
 
+    static bool framebufferResized;
 private:
-
 
     QueueFamilyIndices FindQueueFamily();
     std::vector<const char*> GetRequiredLayers();

@@ -26,7 +26,7 @@ namespace VulkanPathfinding{
 
             //Delta Time
             m_deltaTime.Update(static_cast<float>(glfwGetTime()));
-            //APP_TRACE("Delta Time: {}", m_deltaTime.AsMiliSeconds());
+            // APP_TRACE("Delta Time: {}", m_deltaTime.AsMiliSeconds());
             //Delta Time
             
             //FRAME START

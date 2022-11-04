@@ -21,7 +21,6 @@ namespace VulkanPathfinding
         }
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         m_windowHandle = glfwCreateWindow(m_width, m_heigth, m_title.c_str(),nullptr,nullptr);
         
@@ -48,6 +47,7 @@ namespace VulkanPathfinding
     void Window::WindowSizeCallback(GLFWwindow *window, int width, int height){
         (void)window;
         APP_INFO("RESIZED WIDTH:{} HEIGHT:{}", width, height);
+        VulkanContext::framebufferResized = true;   
     }
     void Window::CreateSurface(){
         if (glfwCreateWindowSurface(VulkanContext::Get().GetInstanceHandle(), m_windowHandle, nullptr, VulkanContext::Get().GetSurfaceHandle()) != VK_SUCCESS)

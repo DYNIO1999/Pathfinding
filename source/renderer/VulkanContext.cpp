@@ -2,7 +2,7 @@
 #include "../core/Application.h"
 
 namespace VulkanPathfinding{
-
+    bool VulkanContext::framebufferResized =false;
     std::vector<char> VulkanContext::ReadFile(const std::string &path)
     {
         std::vector<char> shaderSource;
@@ -287,8 +287,8 @@ namespace VulkanPathfinding{
             }
         }
 
-        VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
-
+        VkPresentModeKHR presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR; //If V-Sync off
+        //VK_PRESENT_MODE_FIFO_KHR if VSync on
         for (auto &it : m_vulkanSwapchainPresentModes)
         {
             if (it == VK_PRESENT_MODE_MAILBOX_KHR) 
@@ -318,7 +318,7 @@ namespace VulkanPathfinding{
             extent = actualExtent;
         }
 
-        uint32_t imageCount = m_vulkanSwapchainCapabilities.minImageCount+1;
+        uint32_t imageCount = m_vulkanSwapchainCapabilities.minImageCount;
 
         if (m_vulkanSwapchainCapabilities.maxImageCount > 0 && imageCount > m_vulkanSwapchainCapabilities.maxImageCount)
         {
@@ -370,6 +370,8 @@ namespace VulkanPathfinding{
         vkGetSwapchainImagesKHR(m_vulkanLogicalDeviceHandle, m_vulkanSwapChainHandle, &m_vulkanSwapChainImagesCount, nullptr);
         m_vulkanSwapChainImages.resize(m_vulkanSwapChainImagesCount);
         vkGetSwapchainImagesKHR(m_vulkanLogicalDeviceHandle, m_vulkanSwapChainHandle, &m_vulkanSwapChainImagesCount, m_vulkanSwapChainImages.data());
+
+        
     }
 
     void VulkanContext::CreateImageViews(){
@@ -610,6 +612,7 @@ namespace VulkanPathfinding{
         }
     }
 
+
     void VulkanContext::RecordCommandBuffers()
     {
         VkCommandBufferBeginInfo cmdBufInfo = {};
@@ -662,21 +665,51 @@ namespace VulkanPathfinding{
         }
     }
 
+    void VulkanContext::RecreateSwapChain(){
+
+        vkDeviceWaitIdle(m_vulkanLogicalDeviceHandle);
+
+
+        
+        for (auto &imageViews : m_vulkanSwapChainImageViews)
+        {
+            vkDestroyImageView(m_vulkanLogicalDeviceHandle, imageViews, nullptr);
+        }
+        for (auto &frameBuffer : m_vulkanFrameBuffers)
+        {
+            vkDestroyFramebuffer(m_vulkanLogicalDeviceHandle, frameBuffer, nullptr);
+        }
+
+        vkDestroySwapchainKHR(m_vulkanLogicalDeviceHandle, m_vulkanSwapChainHandle, nullptr);
+
+        vkFreeCommandBuffers(m_vulkanLogicalDeviceHandle, m_vulkanCommandPoolHandle, static_cast<uint32_t>(m_vulkanCommandBuffers.size()), m_vulkanCommandBuffers.data());
+        
+        InitSwapChain();
+        CreateImageViews();
+        CreateFrameBuffers();
+        CreateCommandBuffers();
+        RecordCommandBuffers();
+    }
+
     void VulkanContext::Draw(){
 
         VK_CHECK_RESULT(vkWaitForFences(m_vulkanLogicalDeviceHandle, 1, &m_queueCompleteFences[m_currentActiveFrameBuffer], VK_TRUE, UINT64_MAX), APP_ERROR("Failed to wait for Vulkan Fence!"));
-        VK_CHECK_RESULT(vkResetFences(m_vulkanLogicalDeviceHandle, 1, &m_queueCompleteFences[m_currentActiveFrameBuffer]), APP_ERROR("Failed to reset Vulkan Fence!"));
         uint32_t imageIndex;
         VkResult acquire = vkAcquireNextImageKHR(m_vulkanLogicalDeviceHandle, m_vulkanSwapChainHandle, UINT64_MAX, m_presentCompleteSemaphore[m_currentActiveFrameBuffer], (VkFence) nullptr, &imageIndex);
-        if (!((acquire == VK_SUCCESS) || (acquire == VK_SUBOPTIMAL_KHR)))
+        if ((acquire == VK_ERROR_OUT_OF_DATE_KHR) || (acquire == VK_SUBOPTIMAL_KHR))
+        {
+                if (acquire == VK_ERROR_OUT_OF_DATE_KHR)
+                {
+                    RecreateSwapChain();
+                }
+                return;
+        }else
         {
             VK_CHECK_RESULT(acquire, APP_ERROR("Failed to acquire next image from Swap Chain"));
         }
-
-
-        APP_ERROR("INDEX {}", m_currentActiveFrameBuffer);
-        // Use a fence to wait until the command buffer has finished execution before using it again
         
+        VK_CHECK_RESULT(vkResetFences(m_vulkanLogicalDeviceHandle, 1, &m_queueCompleteFences[m_currentActiveFrameBuffer]), APP_ERROR("Failed to reset Vulkan Fence!"));
+
 
         // Pipeline stage at which the queue submission will wait (via pWaitSemaphores)
         VkPipelineStageFlags waitStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -709,8 +742,16 @@ namespace VulkanPathfinding{
         }
 
 
-        VK_CHECK_RESULT(vkQueuePresentKHR(m_vulkanGraphicsQueueHandle, &presentInfo), APP_ERROR("Failed present framebuffer!"));
-
+        VkResult result =  vkQueuePresentKHR(m_vulkanGraphicsQueueHandle, &presentInfo);
+        if((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR) || framebufferResized)
+        {
+            framebufferResized =false;
+            RecreateSwapChain();
+            if (result == VK_ERROR_OUT_OF_DATE_KHR)
+            {
+                return;
+            }
+        }
         m_currentActiveFrameBuffer = (m_currentActiveFrameBuffer + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 }
