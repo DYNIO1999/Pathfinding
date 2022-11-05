@@ -24,6 +24,15 @@ namespace VulkanPathfinding
     };
 }
 // Core Logging Macros
+#define VK_CHECK_RESULT(f)             \
+    {                                  \
+        VkResult res = (f);            \
+        if (res != VK_SUCCESS)         \
+        {                              \
+                                       \
+            assert(res == VK_SUCCESS); \
+        }                              \
+    }
 #define CHECK_ERROR(exp, msg) assert(((void)msg, exp))
 #define APP_ERROR_VALUE 0
 

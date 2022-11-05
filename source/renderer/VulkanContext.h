@@ -21,6 +21,7 @@ public:
     VulkanContext(const VulkanContext&) = delete;
     void operator=(const VulkanContext&) = delete;
 
+    VkInstance InstanceHandle() { return m_vulkanInstanceHandle; }
     void Initialize();
     void Shutdown();
 

@@ -13,6 +13,8 @@
 #include "../time/FPSCounter.h"
 
 #include "../renderer/VulkanContext.h"
+#include "../renderer/VulkanSwapChain.h"
+#include "../renderer/VulkanPipeline.h"
 
 #include "Logger.h"
 
@@ -29,8 +31,14 @@ public:
     static std::shared_ptr<Window> GetWindow(){return m_window;}
     static bool IsValidationEnabled() { return m_enableValidation; }
 
+    void Draw();
+    void CreateCommandBuffers();
 private:
     static std::shared_ptr<Window> m_window;
+    std::unique_ptr<VulkanDevice> m_device;
+    std::unique_ptr<VulkanSwapChain> m_swapchain;
+
+    std::unique_ptr<VulkanPipeline> m_defaultPipline;
     void Initialize();
     void Shutdown();
 
@@ -38,7 +46,9 @@ private:
     
     FPSCounter m_fpsCounter;
     DeltaTime m_deltaTime;
+    PipelineConfigInfo pipelineConfig{};
 
+    std::vector<VkCommandBuffer> commandBuffers;
 };
 }
 #endif
