@@ -74,12 +74,32 @@ namespace VulkanPathfinding
 
         vertexInputInfo.vertexAttributeDescriptionCount = pipelineSpecification.vertexInputDescription.attributes.size();
         vertexInputInfo.pVertexAttributeDescriptions = pipelineSpecification.vertexInputDescription.attributes.data();
-
+        
+        
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 0;
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
-        if (vkCreatePipelineLayout(m_deviceRef.LogicalDeviceHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayoutHandle)){
+        
+    
+        if (pipelineSpecification.pushConstantData){
+            
+            VkPushConstantRange pushConstantRange;
+            pushConstantRange.offset = 0;
+            pushConstantRange.size = sizeof(PipelinePushConstantData);
+            pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+            pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.setLayoutCount = 0;
+            pipelineLayoutInfo.pushConstantRangeCount = 1;
+            pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+
+        }else{
+
+            pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.setLayoutCount = 0;
+            pipelineLayoutInfo.pushConstantRangeCount = 0;
+        }
+
+        if (vkCreatePipelineLayout(m_deviceRef.LogicalDeviceHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayoutHandle))
+        {
             CHECK_ERROR(APP_ERROR_VALUE, APP_ERROR("Failed to create Pipline Layout!"));
         }
 

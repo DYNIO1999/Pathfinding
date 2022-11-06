@@ -65,14 +65,20 @@ private:
     VkBuffer vertexBuffer;
     VmaAllocation vertexBufferAllocation;
 
+    VkBuffer vertexBuffer_2;
+    VmaAllocation vertexBufferAllocation_2;
 
     std::vector<Vertex> vertices;
+    std::vector<Vertex> vertices_2;
     void CreateVertexBuffer();
 
+    glm::vec3 camPos = {0.f, 0.f, -2.f};
 
-
-
-
+    glm::mat4 view;
+    // camera projection
+    glm::mat4 projection = glm::perspective(glm::radians(70.f), 1600.f / 900.f, 0.1f, 200.0f);
+    // model rotation
+    glm::mat4 model = glm::mat4(1);
 };
 }
 #endif

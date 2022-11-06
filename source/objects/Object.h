@@ -1,13 +1,13 @@
 #ifndef _OBJECTS_OBJECT_H_
 #define _OBJECTS_OBJECT_H_
 
-#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
+//#define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-#define GLM_ENABLE_EXPERIMENTAL 
+#define GLM_ENABLE_EXPERIMENTAL
 
-#include <glm/glm.hpp>
-#include<glm/gtx/string_cast.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

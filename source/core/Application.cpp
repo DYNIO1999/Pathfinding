@@ -71,6 +71,7 @@ namespace VulkanPathfinding{
 
         m_defaultPipelineSpec = VulkanPipeline::DefaultPipelineSpecification(m_swapchain->RenderPassHandle());
         m_defaultPipelineSpec.vertexInputDescription = VertexInputDescription::GetVertexDescription();
+        m_defaultPipelineSpec.pushConstantData = std::make_unique<PipelinePushConstantData>(PipelinePushConstantData{glm::mat4(1.0f)});
 
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
         
@@ -164,11 +165,38 @@ namespace VulkanPathfinding{
 
         m_defaultPipline->Bind(commandBuffer);
 
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
-        vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
 
-        APP_ERROR(vertices.size());
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer_2, &offset);
+
+
+
+        // calculate final mesh matrix
+        view= glm::translate(glm::mat4(1.f), camPos);
+        model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
+        
+        glm::mat4 mesh_matrix = projection * view * model;
+        PipelinePushConstantData constant;
+        constant.projection = mesh_matrix;
+
+
+        // upload the matrix to the GPU via push constants
+        vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
+
+        // we can now draw
+
+        if (Input::KeyPressed(GLFW_KEY_W))
+        {
+            // Draw2();
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
+            vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
+        }
+        else
+        {
+
+            vkCmdDraw(commandBuffer, vertices_2.size(), 1, 0, 0);
+        }
+
 
         vkCmdEndRenderPass(commandBuffer);
         // Render Pass
@@ -210,6 +238,11 @@ namespace VulkanPathfinding{
             APP_WARN("Color {}", glm::to_string(i.color));
         }
 
+        vertices_2.emplace_back(Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        vertices_2.emplace_back(Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        vertices_2.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+
+
         CreateVertexBuffer();
 
     }
@@ -226,6 +259,17 @@ namespace VulkanPathfinding{
         memcpy(data, vertices.data(), vertices.size() * sizeof(Vertex));
         m_allocator->UnmapMemory(vertexBufferAllocation);
 
+        VkBufferCreateInfo bufferInfo_2 = {};
+        bufferInfo_2.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo_2.size = vertices_2.size() * sizeof(Vertex);
+        bufferInfo_2.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+        vertexBufferAllocation_2 = m_allocator->AllocateBuffer(&bufferInfo_2, &vertexBuffer_2);
+        auto data2 = m_allocator->MapMemory(vertexBufferAllocation_2);
+
+        memcpy(data2, vertices_2.data(), vertices_2.size() * sizeof(Vertex));
+        m_allocator->UnmapMemory(vertexBufferAllocation_2);
     }
+
 }
 

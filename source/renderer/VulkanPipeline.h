@@ -10,8 +10,14 @@
 
 namespace VulkanPathfinding{
 
+
+    struct PipelinePushConstantData{
+        alignas(16)glm::mat4 projection;
+    };
+
     struct PipelineSpecification
     {
+        std::unique_ptr<PipelinePushConstantData> pushConstantData;
         VertexInputDescription vertexInputDescription{};
         VkPipelineViewportStateCreateInfo viewportInfo;
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
@@ -41,7 +47,8 @@ public:
     VulkanPipeline &operator=(const VulkanPipeline &) = delete;
 
     void Bind(VkCommandBuffer commandBuffer);
-
+    
+    VkPipelineLayout PipelineLayoutHandle(){return m_pipelineLayoutHandle;}
     static PipelineSpecification DefaultPipelineSpecification(VkRenderPass renderPass);
 
 private:
