@@ -22,18 +22,18 @@ Engine initialization | Boilerplate
     Choose Logical Device [DONE] 
     Setup Queues [DONE] 
     Setup Swap chain [DONE] 
-    Swap chain recreation []
-    Pipeline []
-    Swap chain Recreation []
-    RecordingCommands []
-    Drawing Triangle []
-    Code Refactoring []
+    Swap chain recreation [DONE]
+    Pipeline [DONE]
+    RecordingCommands [DONE]
+    Drawing Triangle [DONE]
+    Code Refactoring [DONE]
     
-# DEADLINE [/8/9/10/11/12/13/14]
-
     VertexBuffers [] 
     IndexBuffers []
     Uniforms []
+    
+# DEADLINE [/8/9/10/11/12/13/14]
+
     ComputePipeline[]    
     Textures [] ??
     Grid []

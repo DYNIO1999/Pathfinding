@@ -64,6 +64,7 @@ namespace VulkanPathfinding{
         m_context = std::make_unique<VulkanContext>();
 
         m_device = std::make_unique<VulkanDevice>();
+        m_allocator = std::make_unique<VulkanAllocator>(*m_device);
 
         m_swapchain = std::make_unique<VulkanSwapChain>(*m_device);
 
@@ -133,8 +134,14 @@ namespace VulkanPathfinding{
 
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = m_swapchain->Extent();
+        VkClearValue clearColor;
 
-        VkClearValue clearColor = {{{1.0f, 1.0f, 0.5f, 1.0f}}};
+        
+        if(Input::KeyPressed(GLFW_KEY_W)){
+            clearColor = {{{0.0f, 1.0f, 0.5f, 1.0f}}};
+        }else{
+            clearColor = {{{0.6f, 1.0f, 0.5f, 1.0f}}};
+        }
 
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;

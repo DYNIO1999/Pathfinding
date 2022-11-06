@@ -15,6 +15,7 @@
 #include "../renderer/VulkanContext.h"
 #include "../renderer/VulkanSwapChain.h"
 #include "../renderer/VulkanPipeline.h"
+#include "../renderer/VulkanAllocator.h"
 
 
 
@@ -39,6 +40,7 @@ private:
     std::unique_ptr<VulkanContext> m_context;
     static std::shared_ptr<Window> m_window;
     std::unique_ptr<VulkanDevice> m_device;
+    std::unique_ptr<VulkanAllocator> m_allocator;
     std::unique_ptr<VulkanSwapChain> m_swapchain;
 
     std::unique_ptr<VulkanPipeline> m_defaultPipline;

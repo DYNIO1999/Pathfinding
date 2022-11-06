@@ -51,6 +51,7 @@ public:
     VkCommandPool CommandPoolHandle() { return m_commandPoolHandle; }
     VkQueue PresentQueueHandle() { return m_presentQueueHandle; }
     VkDevice LogicalDeviceHandle() { return m_logicalDeviceHandle; }
+    VkPhysicalDevice PhysicalDeviceHandle(){return m_physicalDeviceHandle;}
 
 private:
 
