@@ -14,7 +14,7 @@ namespace VulkanPathfinding
 
         VmaAllocator AllocatorHandle() { return m_allocatorHandle;}
 
-        VmaAllocation AllocateBuffer(VkBufferCreateInfo *createInfo, uint32_t flags, VkBuffer *buffer);
+        VmaAllocation AllocateBuffer(VkBufferCreateInfo *createInfo, VkBuffer *buffer);
         void DestroyBuffer(VkBuffer buffer, VmaAllocation allocation);
 
         void *MapMemory(VmaAllocation allocation);

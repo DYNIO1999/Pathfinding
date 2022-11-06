@@ -69,8 +69,11 @@ namespace VulkanPathfinding
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        vertexInputInfo.vertexBindingDescriptionCount = pipelineSpecification.vertexInputDescription.bindings.size();
+        vertexInputInfo.pVertexBindingDescriptions = pipelineSpecification.vertexInputDescription.bindings.data();
+
+        vertexInputInfo.vertexAttributeDescriptionCount = pipelineSpecification.vertexInputDescription.attributes.size();
+        vertexInputInfo.pVertexAttributeDescriptions = pipelineSpecification.vertexInputDescription.attributes.data();
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

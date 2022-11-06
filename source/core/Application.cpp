@@ -17,7 +17,8 @@ namespace VulkanPathfinding{
     void Application::Run(){
         //Timer timer(true);
         Initialize();
-
+        InitObjects();
+      
 
 
         //Init Vulkan
@@ -69,6 +70,7 @@ namespace VulkanPathfinding{
         m_swapchain = std::make_unique<VulkanSwapChain>(*m_device);
 
         m_defaultPipelineSpec = VulkanPipeline::DefaultPipelineSpecification(m_swapchain->RenderPassHandle());
+        m_defaultPipelineSpec.vertexInputDescription = VertexInputDescription::GetVertexDescription();
 
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
         
@@ -77,7 +79,7 @@ namespace VulkanPathfinding{
     }
     void Application::Shutdown(){
 
-
+        m_allocator->DestroyBuffer(vertexBuffer,vertexBufferAllocation);
         vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
     }
 
@@ -161,8 +163,12 @@ namespace VulkanPathfinding{
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
         m_defaultPipline->Bind(commandBuffer);
-        
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
+        vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
+
+        APP_ERROR(vertices.size());
 
         vkCmdEndRenderPass(commandBuffer);
         // Render Pass
@@ -190,6 +196,36 @@ namespace VulkanPathfinding{
 
     }
 
+    void Application::InitObjects(){
+        vertices.emplace_back(Vertex{glm::vec3(-0.5f,-0.5f,0.0f), glm::vec4(1.0f,1.0f,0.5f,0.0f)});
+        vertices.emplace_back(Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        vertices.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        vertices.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        vertices.emplace_back(Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        vertices.emplace_back(Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
 
+        for (auto &i : vertices)
+        {
+            APP_WARN("Position {}", glm::to_string(i.position));
+            APP_WARN("Color {}", glm::to_string(i.color));
+        }
+
+        CreateVertexBuffer();
+
+    }
+
+    void Application::CreateVertexBuffer(){
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = vertices.size() * sizeof(Vertex);
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+        vertexBufferAllocation = m_allocator->AllocateBuffer(&bufferInfo, &vertexBuffer);
+        auto data = m_allocator->MapMemory(vertexBufferAllocation);
+
+        memcpy(data, vertices.data(), vertices.size() * sizeof(Vertex));
+        m_allocator->UnmapMemory(vertexBufferAllocation);
+
+    }
 }
 

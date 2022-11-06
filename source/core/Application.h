@@ -17,6 +17,8 @@
 #include "../renderer/VulkanPipeline.h"
 #include "../renderer/VulkanAllocator.h"
 
+#include "../objects/Object.h"
+
 
 
 #include "Logger.h"
@@ -36,6 +38,9 @@ public:
 
     void Draw();
     void CreateCommandBuffers();
+
+
+    void InitObjects();
 private:
     std::unique_ptr<VulkanContext> m_context;
     static std::shared_ptr<Window> m_window;
@@ -54,6 +59,20 @@ private:
     PipelineSpecification m_defaultPipelineSpec{};
 
     std::vector<VkCommandBuffer> commandBuffers;
+    
+    //TESTING DATA BELOW
+
+    VkBuffer vertexBuffer;
+    VmaAllocation vertexBufferAllocation;
+
+
+    std::vector<Vertex> vertices;
+    void CreateVertexBuffer();
+
+
+
+
+
 };
 }
 #endif

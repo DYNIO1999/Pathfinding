@@ -6,13 +6,13 @@
 #include "VulkanDevice.h"
 
 #include "../core/Logger.h"
+#include "../objects/Object.h"
 
 namespace VulkanPathfinding{
 
     struct PipelineSpecification
     {
-        std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
-        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        VertexInputDescription vertexInputDescription{};
         VkPipelineViewportStateCreateInfo viewportInfo;
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
         VkPipelineRasterizationStateCreateInfo rasterizationInfo;
