@@ -1,32 +1,31 @@
 #ifndef _RENDERER_VULKAN_PIPELINE_H_
 #define _RENDERER_VULKAN_PIPELINE_H_
 
-#include "VulkanDevice.h"
-#include "../core/Logger.h"
 #include <fstream>
 
-namespace VulkanPathfinding{
-struct PipelineConfigInfo
-{
-    PipelineConfigInfo() = default;
-    PipelineConfigInfo(const PipelineConfigInfo &) = delete;
-    PipelineConfigInfo &operator=(const PipelineConfigInfo &) = delete;
+#include "VulkanDevice.h"
 
-    std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
-    std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
-    VkPipelineViewportStateCreateInfo viewportInfo;
-    VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
-    VkPipelineRasterizationStateCreateInfo rasterizationInfo;
-    VkPipelineMultisampleStateCreateInfo multisampleInfo;
-    VkPipelineColorBlendAttachmentState colorBlendAttachment;
-    VkPipelineColorBlendStateCreateInfo colorBlendInfo;
-    VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
-    std::vector<VkDynamicState> dynamicStateEnables;
-    VkPipelineDynamicStateCreateInfo dynamicStateInfo;
-    VkPipelineLayout pipelineLayout = nullptr;
-    VkRenderPass renderPass = nullptr;
-    uint32_t subpass = 0;
-};
+#include "../core/Logger.h"
+
+namespace VulkanPathfinding{
+
+    struct PipelineSpecification
+    {
+        std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        VkPipelineViewportStateCreateInfo viewportInfo;
+        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
+        VkPipelineRasterizationStateCreateInfo rasterizationInfo;
+        VkPipelineMultisampleStateCreateInfo multisampleInfo;
+        VkPipelineColorBlendAttachmentState colorBlendAttachment;
+        VkPipelineColorBlendStateCreateInfo colorBlendInfo;
+        VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
+        std::vector<VkDynamicState> dynamicStateEnables;
+        VkPipelineDynamicStateCreateInfo dynamicStateInfo;
+
+        uint32_t subpass = 0;
+        VkRenderPass renderPass = nullptr;
+    };
 
 class VulkanPipeline
 {
@@ -35,7 +34,7 @@ public:
         VulkanDevice &device,
         const std::string &vertFilepath,
         const std::string &fragFilepath,
-        PipelineConfigInfo &configInfo);
+        PipelineSpecification &pipelineData);
     ~VulkanPipeline();
 
     VulkanPipeline(const VulkanPipeline &) = delete;
@@ -43,22 +42,26 @@ public:
 
     void Bind(VkCommandBuffer commandBuffer);
 
-    static void DefaultPipelineConfigInfo(PipelineConfigInfo &configInfo);
+    static PipelineSpecification DefaultPipelineSpecification(VkRenderPass renderPass);
 
 private:
+    
+
     static std::vector<char> ReadShaderFile(const std::string &path);
 
     void CreateGraphicsPipeline(
         const std::string &vertFilepath,
         const std::string &fragFilepath,
-        PipelineConfigInfo &configInfo);
+        PipelineSpecification &pipelineData);
 
     void CreateShaderModule(const std::vector<char> &code, VkShaderModule *shaderModule);
 
     VulkanDevice &m_deviceRef;
-    VkPipeline m_graphicsPipeline;
     VkShaderModule m_vertShaderModule;
     VkShaderModule m_fragShaderModule;
+
+    VkPipelineLayout m_pipelineLayoutHandle{VK_NULL_HANDLE};
+    VkPipeline m_pipelineHandle{VK_NULL_HANDLE};
 };
 }
 #endif

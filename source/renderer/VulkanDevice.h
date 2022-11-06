@@ -35,13 +35,6 @@ public:
     VulkanDevice();
     ~VulkanDevice();
 
-
-    void Initialize();
-    void Shutdown();
-
-    
-
-
     SwapChainSupportInfo GetSwapChainSupport() { return QuerySwapChainSupport(m_physicalDeviceHandle); }
 
     QueueFamilyIndicesInfo FindPhysicalQueueFamilies() { return FindQueueFamilies(m_physicalDeviceHandle); }
@@ -61,6 +54,9 @@ public:
 
 private:
 
+    void Initialize();
+    void Shutdown();
+    
     void CreateSurface();
     void SelectPhysicalDevice();
     void CreateLogicalDevice();

@@ -3,6 +3,15 @@
 
 namespace VulkanPathfinding{
 
+    VkInstance VulkanContext::m_vulkanInstanceHandle = VK_NULL_HANDLE;
+
+    VulkanContext::VulkanContext(){
+        Initialize();
+    }
+    VulkanContext::~VulkanContext(){
+        Shutdown();
+    }
+
     void VulkanContext::Initialize()
     {
 
@@ -29,8 +38,7 @@ namespace VulkanPathfinding{
         if (result) {
             CHECK_ERROR(APP_ERROR_VALUE, APP_ERROR("Vulkan Instance creation failed"));
         }
-
-        //setup debug
+        
         if(Application::IsValidationEnabled()){
             VulkanDebug::Initialize(m_vulkanInstanceHandle);
         }

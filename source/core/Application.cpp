@@ -51,37 +51,33 @@ namespace VulkanPathfinding{
 
 
     void Application::Initialize(){
+
+
+        std::filesystem::path cwd = std::filesystem::current_path();
+        std::cout<<cwd<<'\n';
+        
         Timer timer(true,GET_NAME(Initialize()));
         
         Logger::Init();
 
         m_window = std::make_shared<Window>(1600,900,std::move("VulkanPathfinding"));
+        m_context = std::make_unique<VulkanContext>();
 
-        auto &vulkanContext = VulkanContext::Get();
-        
-        vulkanContext.Initialize();
         m_device = std::make_unique<VulkanDevice>();
-        m_device->Initialize();
 
-        m_swapchain = std::make_unique<VulkanSwapChain>(*m_device,nullptr);
+        m_swapchain = std::make_unique<VulkanSwapChain>(*m_device);
 
+        m_defaultPipelineSpec = VulkanPipeline::DefaultPipelineSpecification(m_swapchain->RenderPassHandle());
 
+        m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
         
-
-        VulkanPipeline::DefaultPipelineConfigInfo(pipelineConfig);
-        pipelineConfig.renderPass =m_swapchain->m_renderPass;
-        m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv",pipelineConfig);
 
         CreateCommandBuffers();
     }
     void Application::Shutdown(){
-        vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
-        
-        m_swapchain->Destroy();
-        m_device->Shutdown();
-        auto &vulkanContext = VulkanContext::Get();
-        vulkanContext.Shutdown();
 
+
+        vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
     }
 
     void Application::CreateCommandBuffers(){
@@ -97,55 +93,63 @@ namespace VulkanPathfinding{
             VK_SUCCESS)
         {
             APP_ERROR("DOESNT WORK");
-            //throw std::runtime_error("failed to allocate command buffers!");
         }
     }
     void Application::Draw(){
         uint32_t imageIndex;
-       
-        m_swapchain->AcquireNextImage(&imageIndex);
+        VkResult acquireResult = m_swapchain->AcquireNextImage(&imageIndex);
+        if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR){
+            vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
 
+            if (m_swapchain == nullptr)
+            {
+                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device);
+            }
+            else
+            {
+                std::shared_ptr<VulkanSwapChain> oldSwapChain = std::move(m_swapchain);
+                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, oldSwapChain);
+            }
+        }
 
-
-        //isFrameStarted = true;
-
-        auto commandBuffer = commandBuffers[m_swapchain->m_currentFrame];
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+        if ((acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR))
         {
-            APP_ERROR("DOESNT WORK");
+            APP_ERROR("Failed to acquire swap chain image!");
         }
 
 
+        VkCommandBuffer commandBuffer = commandBuffers[m_swapchain->CurrentFrame()];
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
         
         
-        
-        
+        // Render Pass
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_swapchain->m_renderPass;
-        renderPassInfo.framebuffer = m_swapchain->m_swapChainFramebuffers[imageIndex];
+        renderPassInfo.renderPass = m_swapchain->RenderPassHandle();
+        renderPassInfo.framebuffer = m_swapchain->AcquireFrameBuffer(imageIndex);
 
         renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = m_swapchain->m_swapChainExtent;
+        renderPassInfo.renderArea.extent = m_swapchain->Extent();
 
         VkClearValue clearColor = {{{1.0f, 1.0f, 0.5f, 1.0f}}};
 
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
+
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = static_cast<float>(m_swapchain->m_swapChainExtent.width);
-        viewport.height = static_cast<float>(m_swapchain->m_swapChainExtent.height);
+        viewport.width = static_cast<float>(m_swapchain->Extent().width);
+        viewport.height = static_cast<float>(m_swapchain->Extent().height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        VkRect2D scissor{{0, 0}, m_swapchain->m_swapChainExtent};
+        VkRect2D scissor{{0, 0}, m_swapchain->Extent()};
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
@@ -154,14 +158,31 @@ namespace VulkanPathfinding{
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
+        // Render Pass
 
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+
+
+        vkEndCommandBuffer(commandBuffer);
+
+
+        
+        VkResult submitResult= m_swapchain->SubmitCommandBuffers(&commandBuffer, &imageIndex);
+        if (submitResult == VK_ERROR_OUT_OF_DATE_KHR || submitResult == VK_SUBOPTIMAL_KHR)
         {
-            APP_ERROR("DOESNT WORK");
+            vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
+            if (m_swapchain == nullptr)
+            {
+                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device);
+            }
+            else
+            {
+                std::shared_ptr<VulkanSwapChain> oldSwapChain = std::move(m_swapchain);
+                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, oldSwapChain);
+            }
         }
 
-        m_swapchain->SubmitCommandBuffers(&commandBuffer, &imageIndex);
     }
+
 
 }
 

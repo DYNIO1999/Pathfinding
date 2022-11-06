@@ -3,7 +3,7 @@
 
 //STL
 #include <iostream>
-
+#include <filesystem>
 
 //Own
 #include "../window/Window.h"
@@ -15,6 +15,8 @@
 #include "../renderer/VulkanContext.h"
 #include "../renderer/VulkanSwapChain.h"
 #include "../renderer/VulkanPipeline.h"
+
+
 
 #include "Logger.h"
 
@@ -34,6 +36,7 @@ public:
     void Draw();
     void CreateCommandBuffers();
 private:
+    std::unique_ptr<VulkanContext> m_context;
     static std::shared_ptr<Window> m_window;
     std::unique_ptr<VulkanDevice> m_device;
     std::unique_ptr<VulkanSwapChain> m_swapchain;
@@ -46,7 +49,7 @@ private:
     
     FPSCounter m_fpsCounter;
     DeltaTime m_deltaTime;
-    PipelineConfigInfo pipelineConfig{};
+    PipelineSpecification m_defaultPipelineSpec{};
 
     std::vector<VkCommandBuffer> commandBuffers;
 };

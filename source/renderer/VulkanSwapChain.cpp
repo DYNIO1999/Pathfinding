@@ -6,15 +6,21 @@ namespace VulkanPathfinding
 {
     int VulkanSwapChain::MAX_FRAMES_IN_FLIGHT =2;
 
-    VulkanSwapChain::VulkanSwapChain(VulkanDevice &deviceRef, std::shared_ptr<VulkanSwapChain> previous) : m_oldSwapChain(previous), m_deviceRef(deviceRef)
+    VulkanSwapChain::VulkanSwapChain(VulkanDevice &deviceRef): m_deviceRef(deviceRef)
     {
         Initialize();
         m_oldSwapChain = nullptr;
     }
+    VulkanSwapChain::VulkanSwapChain(VulkanDevice &deviceRef, std::shared_ptr<VulkanSwapChain> previous) : m_oldSwapChain(previous), m_deviceRef(deviceRef)
+    {
+        Initialize();
+        m_oldSwapChain = nullptr;
+
+    }
 
     VulkanSwapChain::~VulkanSwapChain()
     {
-
+        Destroy();
     }
 
     void VulkanSwapChain::Destroy(){
@@ -248,7 +254,6 @@ namespace VulkanPathfinding
         m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-        APP_ERROR("SWAP CHAIN IMAGES: {}", m_swapChainImages.size());
         m_imagesInFlight.resize(m_swapChainImages.size(), VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphoreInfo = {};

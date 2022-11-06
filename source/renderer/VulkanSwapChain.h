@@ -8,6 +8,7 @@ namespace VulkanPathfinding{
 class VulkanSwapChain
 {
 public:
+    VulkanSwapChain(VulkanDevice &deviceRef);
     VulkanSwapChain(VulkanDevice &deviceRef, std::shared_ptr<VulkanSwapChain> previous);
     
     ~VulkanSwapChain();
@@ -15,20 +16,31 @@ public:
     VulkanSwapChain(const VulkanSwapChain &) = delete;
     VulkanSwapChain &operator=(const VulkanSwapChain &) = delete;
 
-    void Initialize();
-    void Destroy();
+ 
  
     VkResult AcquireNextImage(uint32_t *imageIndex);
     VkResult SubmitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex);
+    VkRenderPass RenderPassHandle(){return m_renderPass;}
+    size_t CurrentFrame(){return m_currentFrame;}
+    VkFramebuffer AcquireFrameBuffer(size_t index){
+        return m_swapChainFramebuffers[index];
+    }
 
-    VkRenderPass m_renderPass;
-    size_t m_currentFrame;
-
+    std::pair < uint32_t, uint32_t> Size(){return {m_swapChainExtent.width,m_swapChainExtent.height};}
+    VkExtent2D Extent(){return m_swapChainExtent;}
+    
     static int MAX_FRAMES_IN_FLIGHT;
+
+private:
+    VkExtent2D m_swapChainExtent;
     std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
-    VkExtent2D m_swapChainExtent;
-private:
+    size_t m_currentFrame{0};
+    VkRenderPass m_renderPass;
+    
+    void Initialize();
+    void Destroy();
+
     void CreateSwapChain();
     void CreateImageViews();
 

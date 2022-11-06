@@ -7,30 +7,23 @@
 
 namespace VulkanPathfinding{
 
-//SingleInstance [SINGLTEON]
 class VulkanContext
 {
 public:
-    static VulkanContext &Get()
-    {
-        static VulkanContext instance; 
-                                       
-        return instance;
-    }
-    VulkanContext()=default;
+
+    VulkanContext();
+    ~VulkanContext();
     VulkanContext(const VulkanContext&) = delete;
     void operator=(const VulkanContext&) = delete;
 
-    VkInstance InstanceHandle() { return m_vulkanInstanceHandle; }
+    static VkInstance InstanceHandle() { return m_vulkanInstanceHandle;}
+private:
     void Initialize();
     void Shutdown();
-
-private:
-    //Private Methods Vulkan
     std::vector<const char*> GetRequiredLayers();
     std::vector<const char*> GetRequiredExtensions();
 
-    VkInstance m_vulkanInstanceHandle;
+    static VkInstance m_vulkanInstanceHandle;
 };
 }
 #endif

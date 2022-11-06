@@ -51,7 +51,7 @@ namespace VulkanPathfinding
 
     void Window::CreateSurface(VkSurfaceKHR* surface)
     {
-        if (glfwCreateWindowSurface(VulkanContext::Get().InstanceHandle(), m_windowHandle, nullptr, surface) != VK_SUCCESS)
+        if (glfwCreateWindowSurface(VulkanContext::InstanceHandle(), m_windowHandle, nullptr, surface) != VK_SUCCESS)
         {
             CHECK_ERROR(APP_ERROR_VALUE, APP_ERROR("Failed to create window surface!"));
         }

@@ -4,11 +4,12 @@
 namespace VulkanPathfinding
 {
     VulkanDevice::VulkanDevice() 
-    { 
+    {
+        Initialize(); 
     }
     VulkanDevice::~VulkanDevice()
     {
-
+        Shutdown();
     }
 
     void VulkanDevice::Initialize()
@@ -22,7 +23,7 @@ namespace VulkanPathfinding
     {
         vkDestroyCommandPool(m_logicalDeviceHandle, m_commandPoolHandle, nullptr);
         vkDestroyDevice(m_logicalDeviceHandle, nullptr);
-        vkDestroySurfaceKHR(VulkanContext::Get().InstanceHandle(), m_surfaceHandle, nullptr);
+        vkDestroySurfaceKHR(VulkanContext::InstanceHandle(), m_surfaceHandle, nullptr);
     }
     void VulkanDevice::CreateSurface()
     {
@@ -30,16 +31,15 @@ namespace VulkanPathfinding
     }
     void VulkanDevice::SelectPhysicalDevice()
     {
-        auto context = VulkanContext::Get().InstanceHandle();
-
+        auto instance = VulkanContext::InstanceHandle(); 
         uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(context, &deviceCount, nullptr);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         if (deviceCount == 0)
         {
             CHECK_ERROR(APP_ERROR_VALUE, APP_ERROR("Failed to find GPUs with Vulkan support!"));
         }
         std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
-        vkEnumeratePhysicalDevices(context, &deviceCount, physicalDevices.data());
+        vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevices.data());
 
         VkPhysicalDevice selectedPhysicalDevice = nullptr;
         for (VkPhysicalDevice physicalDevice : physicalDevices)
