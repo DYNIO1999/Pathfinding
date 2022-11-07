@@ -1,6 +1,6 @@
 #include "Logger.h"
 
-namespace VulkanPathfinding
+namespace Pathfinding
 {
     std::shared_ptr<spdlog::logger> Logger::s_logger = nullptr;
     void Logger::Init()

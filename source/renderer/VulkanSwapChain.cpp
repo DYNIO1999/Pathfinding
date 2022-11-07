@@ -2,7 +2,7 @@
 #include "../core/Application.h"
 
 
-namespace VulkanPathfinding
+namespace Pathfinding
 {
     int VulkanSwapChain::MAX_FRAMES_IN_FLIGHT =2;
 

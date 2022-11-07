@@ -1,7 +1,7 @@
 #include "Input.h"
 #include "../core/Logger.h"
 #include "../core/Application.h"
-namespace VulkanPathfinding
+namespace Pathfinding
 {
     std::pair<int, int> Input::MousePosition(){
         double xpos, ypos;

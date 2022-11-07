@@ -5,7 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include <string>
-namespace VulkanPathfinding{
+namespace Pathfinding{
     class Window
     {
     public:

@@ -8,7 +8,7 @@
 #include "../core/Logger.h"
 #include "../objects/Object.h"
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 
 
     struct PipelinePushConstantData{

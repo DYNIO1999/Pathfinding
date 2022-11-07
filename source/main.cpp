@@ -1,7 +1,7 @@
 #include "core/Application.h"
 int main()
 { 
-    VulkanPathfinding::Application app(true);
+    Pathfinding::Application app(true);
     app.Run();
     
     return EXIT_SUCCESS;

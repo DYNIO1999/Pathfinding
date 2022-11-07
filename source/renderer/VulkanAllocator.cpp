@@ -3,7 +3,7 @@
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
-namespace VulkanPathfinding
+namespace Pathfinding
 {
     VulkanAllocator::VulkanAllocator(VulkanDevice &device):m_deviceRef(device)
     {

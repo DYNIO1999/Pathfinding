@@ -1,6 +1,6 @@
 #include "Timer.h"
 #include "../core/Logger.h"
-namespace VulkanPathfinding
+namespace Pathfinding
 {
 
     Timer::Timer(bool show, std::string function) : m_function(function), m_showMeasuredTime(show)

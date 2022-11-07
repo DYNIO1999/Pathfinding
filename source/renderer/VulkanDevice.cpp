@@ -1,7 +1,7 @@
 #include "VulkanDevice.h"
 #include "VulkanContext.h"
 #include "../core/Application.h"
-namespace VulkanPathfinding
+namespace Pathfinding
 {
     VulkanDevice::VulkanDevice() 
     {

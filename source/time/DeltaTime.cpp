@@ -1,7 +1,7 @@
 #include "DeltaTime.h"
 
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 
     DeltaTime::DeltaTime():
     m_deltaTime(0.0f), 

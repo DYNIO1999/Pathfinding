@@ -24,7 +24,7 @@
 #include "Logger.h"
 
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 
 class Application
 {

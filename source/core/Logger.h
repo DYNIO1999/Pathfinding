@@ -7,7 +7,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-namespace VulkanPathfinding
+namespace Pathfinding
 {
     class Logger
     {
@@ -36,8 +36,8 @@ namespace VulkanPathfinding
 #define CHECK_ERROR(exp, msg) assert(((void)msg, exp))
 #define APP_ERROR_VALUE 0
 
-#define APP_TRACE(...) VulkanPathfinding::Logger::GetLogger()->trace(__VA_ARGS__)
-#define APP_INFO(...) VulkanPathfinding::Logger::GetLogger()->info(__VA_ARGS__)
-#define APP_WARN(...) VulkanPathfinding::Logger::GetLogger()->warn(__VA_ARGS__)
-#define APP_ERROR(...) VulkanPathfinding::Logger::GetLogger()->error(__VA_ARGS__)
+#define APP_TRACE(...) Pathfinding::Logger::GetLogger()->trace(__VA_ARGS__)
+#define APP_INFO(...) Pathfinding::Logger::GetLogger()->info(__VA_ARGS__)
+#define APP_WARN(...) Pathfinding::Logger::GetLogger()->warn(__VA_ARGS__)
+#define APP_ERROR(...) Pathfinding::Logger::GetLogger()->error(__VA_ARGS__)
 #endif

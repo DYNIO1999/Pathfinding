@@ -1,6 +1,6 @@
 #include "Application.h"
 #include "../input/Input.h"
-namespace VulkanPathfinding{
+namespace Pathfinding{
 
     std::shared_ptr<Window> Application::m_window;
     bool Application::m_enableValidation = false;
@@ -61,7 +61,7 @@ namespace VulkanPathfinding{
         
         Logger::Init();
 
-        m_window = std::make_shared<Window>(1600,900,std::move("VulkanPathfinding"));
+        m_window = std::make_shared<Window>(1600,900,std::move("Pathfinding"));
         m_context = std::make_unique<VulkanContext>();
 
         m_device = std::make_unique<VulkanDevice>();
@@ -174,7 +174,8 @@ namespace VulkanPathfinding{
         // calculate final mesh matrix
         view= glm::translate(glm::mat4(1.f), camPos);
         model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
-        
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
+
         glm::mat4 mesh_matrix = projection * view * model;
         PipelinePushConstantData constant;
         constant.projection = mesh_matrix;

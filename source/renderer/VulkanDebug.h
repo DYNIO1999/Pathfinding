@@ -6,7 +6,7 @@
 
 #include "../core/Logger.h"
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
     
     
     class VulkanDebug

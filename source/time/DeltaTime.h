@@ -1,7 +1,7 @@
 #ifndef _TIME_DELTA_TIME_H_
 #define _TIME_DELTA_TIME_H_
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 
     class DeltaTime
     {

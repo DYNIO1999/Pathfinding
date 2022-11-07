@@ -6,7 +6,7 @@
 #include "VulkanDebug.h" 
 
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 
 class VulkanContext
 {

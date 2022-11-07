@@ -1,6 +1,6 @@
 #include "FPSCounter.h"
 
-namespace VulkanPathfinding
+namespace Pathfinding
 {
         FPSCounter::FPSCounter():
         m_frameCount(0),

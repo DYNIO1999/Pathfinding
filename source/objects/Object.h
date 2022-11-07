@@ -12,7 +12,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 
     struct Vertex{
         glm::vec3 position;

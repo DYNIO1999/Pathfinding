@@ -2,7 +2,7 @@
 #include "../core/Logger.h"
 #include "../input/Input.h"
 #include "../renderer/VulkanContext.h"
-namespace VulkanPathfinding
+namespace Pathfinding
 {
 
     static void glfwErrorCallback(int code, const char *error)

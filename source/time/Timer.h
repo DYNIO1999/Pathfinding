@@ -6,7 +6,7 @@
 
 #define GET_NAME(obj) std::string(#obj)
 
-namespace VulkanPathfinding
+namespace Pathfinding
 {
 class Timer
 {

@@ -1,3 +1,3 @@
 cd build
-./VulkanPathfinding/VulkanPathfinding
+./Pathfinding/Pathfinding
 cd ..

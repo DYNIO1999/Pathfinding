@@ -4,7 +4,7 @@
 
 #include "VulkanDevice.h"
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 class VulkanSwapChain
 {
 public:

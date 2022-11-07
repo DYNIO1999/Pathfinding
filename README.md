@@ -1,4 +1,4 @@
-# VulkanPathfinding
+# Pathfinding
 Engineer Thesis
 
 
@@ -27,15 +27,15 @@ Engine initialization | Boilerplate
     RecordingCommands [DONE]
     Drawing Triangle [DONE]
     Code Refactoring [DONE]
-    
+    Constant Buffer [DONE]
+
     VertexBuffers []
     StagingBuffer []
     IndexBuffers []
-    UniformBuffer []
-    Descriptors[]
     
 # DEADLINE [/8/9/10/11/12/13/14]
-
+    UniformBuffer []
+    Descriptors[]
     ComputePipeline[]    
     Textures [] ??
     Grid []

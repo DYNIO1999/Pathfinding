@@ -1,7 +1,7 @@
 #ifndef _TIME_FPS_COUNTER_H_
 #define _TIME_FPS_COUNTER_H_
 #include "Timer.h"
-namespace VulkanPathfinding{
+namespace Pathfinding{
     
     class FPSCounter
     {

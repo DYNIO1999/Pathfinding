@@ -5,7 +5,7 @@
 #include <utility>
 	
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 class Input
 {
 public:

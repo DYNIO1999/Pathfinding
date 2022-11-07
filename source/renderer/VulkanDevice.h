@@ -10,7 +10,7 @@
 #include <set>
 #include <optional>
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 
 struct SwapChainSupportInfo
 {

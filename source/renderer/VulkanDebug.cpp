@@ -1,6 +1,6 @@
 #include "VulkanDebug.h"
 
-namespace VulkanPathfinding
+namespace Pathfinding
 {
 
     VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebug::VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData)

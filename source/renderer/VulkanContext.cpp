@@ -1,7 +1,7 @@
 #include "VulkanContext.h"
 #include "../core/Application.h"
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 
     VkInstance VulkanContext::m_vulkanInstanceHandle = VK_NULL_HANDLE;
 
@@ -17,8 +17,8 @@ namespace VulkanPathfinding{
 
         VkApplicationInfo appInfo = {};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = "VulkanPathfinding";
-        appInfo.pEngineName = "VulkanPathfinding";
+        appInfo.pApplicationName = "Pathfinding";
+        appInfo.pEngineName = "Pathfinding";
         appInfo.apiVersion = VK_API_VERSION_1_3;
 
         std::vector<const char *> enabledLayers = GetRequiredLayers();

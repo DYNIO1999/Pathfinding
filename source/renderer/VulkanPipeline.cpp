@@ -1,7 +1,7 @@
 #include "VulkanPipeline.h"
 
 
-namespace VulkanPathfinding
+namespace Pathfinding
 {
     VulkanPipeline::VulkanPipeline(
         VulkanDevice &device,

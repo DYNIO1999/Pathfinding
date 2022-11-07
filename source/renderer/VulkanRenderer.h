@@ -2,7 +2,7 @@
 #define _RENDERER_VULKAN_RENDERER_H_
 
 
-namespace VulkanPathfinding{
+namespace Pathfinding{
 //class VulkanRenderer
 //{
 //public:

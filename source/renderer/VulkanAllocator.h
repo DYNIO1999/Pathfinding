@@ -4,7 +4,7 @@
 #include <vk_mem_alloc.h>
 #include "VulkanDevice.h"
 
-namespace VulkanPathfinding
+namespace Pathfinding
 {
     class VulkanAllocator
     {
