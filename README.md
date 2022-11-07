@@ -11,7 +11,7 @@ Create Window [DONE]
     - Callbacks
 Input [DONE]
 
-# DEADLINE [/7]
+# DEADLINE [/7/8/9]
 Engine initialization | Boilerplate
     Create Instance [DONE]
      -  enable validation layers
@@ -32,10 +32,10 @@ Engine initialization | Boilerplate
     VertexBuffers []
     StagingBuffer []
     IndexBuffers []
-    
-# DEADLINE [/8/9/10/11/12/13/14]
+    Descriptors[]    
     UniformBuffer []
-    Descriptors[]
+
+# DEADLINE [/10/11/12/13/14]
     ComputePipeline[]    
     Textures [] ??
     Grid []

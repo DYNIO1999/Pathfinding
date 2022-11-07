@@ -72,10 +72,10 @@ namespace Pathfinding
 
         m_deviceExtensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
-        QueueFamilyIndicesInfo queueFamilyIndices = FindQueueFamilies(m_physicalDeviceHandle);
+        m_queueFamilyIndices = FindQueueFamilies(m_physicalDeviceHandle);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> uniqueQueueFamilies = {queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value()};
+        std::set<uint32_t> uniqueQueueFamilies = {m_queueFamilyIndices.graphicsFamily.value(), m_queueFamilyIndices.presentFamily.value()};
 
         float queuePriority = 1.0f;
         for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -104,8 +104,8 @@ namespace Pathfinding
             CHECK_ERROR(APP_ERROR_VALUE, APP_ERROR("Failed to create logical device!"));
         }
 
-        vkGetDeviceQueue(m_logicalDeviceHandle, queueFamilyIndices.graphicsFamily.value(), 0, &m_graphicsQueueHandle);
-        vkGetDeviceQueue(m_logicalDeviceHandle, queueFamilyIndices.presentFamily.value(), 0, &m_presentQueueHandle);
+        vkGetDeviceQueue(m_logicalDeviceHandle, m_queueFamilyIndices.graphicsFamily.value(), 0, &m_graphicsQueueHandle);
+        vkGetDeviceQueue(m_logicalDeviceHandle, m_queueFamilyIndices.presentFamily.value(), 0, &m_presentQueueHandle);
 
         //APP_INFO("QUEUE GRAPHICS: {} , QUEUE PRESENT: {}", queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value());
     }

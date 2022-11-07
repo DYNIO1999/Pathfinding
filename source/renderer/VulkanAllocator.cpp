@@ -28,11 +28,12 @@ namespace Pathfinding
         vmaDestroyAllocator(m_allocatorHandle);
     }
 
-    VmaAllocation VulkanAllocator::AllocateBuffer(VkBufferCreateInfo *create_info, VkBuffer *buffer)
+    VmaAllocation VulkanAllocator::AllocateBuffer(VkBufferCreateInfo *create_info, uint32_t flags, VkBuffer *buffer)
     {
         VmaAllocationCreateInfo allocationCreateInfo = {};
-        allocationCreateInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        
+        allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        allocationCreateInfo.flags = flags;
+
         VmaAllocation allocation;
         VmaAllocationInfo allocationInfo;
         VK_CHECK_RESULT(vmaCreateBuffer(m_allocatorHandle, create_info, &allocationCreateInfo, buffer, &allocation, &allocationInfo));

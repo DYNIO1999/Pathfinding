@@ -16,6 +16,7 @@
 #include "../renderer/VulkanSwapChain.h"
 #include "../renderer/VulkanPipeline.h"
 #include "../renderer/VulkanAllocator.h"
+#include "../renderer/VulkanBuffers.h"
 
 #include "../objects/Object.h"
 
@@ -47,8 +48,10 @@ private:
     std::unique_ptr<VulkanDevice> m_device;
     std::unique_ptr<VulkanAllocator> m_allocator;
     std::unique_ptr<VulkanSwapChain> m_swapchain;
-
     std::unique_ptr<VulkanPipeline> m_defaultPipline;
+    
+    
+    
     void Initialize();
     void Shutdown();
 
@@ -61,12 +64,11 @@ private:
     std::vector<VkCommandBuffer> commandBuffers;
     
     //TESTING DATA BELOW
+    std::unique_ptr<VulkanIndexBuffer> m_indexBuffer;
+    std::unique_ptr<VulkanVertexBuffer> m_vertexBuffer;
+    std::unique_ptr<VulkanVertexBuffer> m_vertexBuffer2;
 
-    VkBuffer vertexBuffer;
-    VmaAllocation vertexBufferAllocation;
-
-    VkBuffer vertexBuffer_2;
-    VmaAllocation vertexBufferAllocation_2;
+    std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
 
     std::vector<Vertex> vertices;
     std::vector<Vertex> vertices_2;
@@ -79,6 +81,9 @@ private:
     glm::mat4 projection = glm::perspective(glm::radians(70.f), 1600.f / 900.f, 0.1f, 200.0f);
     // model rotation
     glm::mat4 model = glm::mat4(1);
+
+
+    std::vector<Mesh> m_objects;
 };
 }
 #endif

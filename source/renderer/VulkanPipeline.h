@@ -2,11 +2,9 @@
 #define _RENDERER_VULKAN_PIPELINE_H_
 
 #include <fstream>
-
 #include "VulkanDevice.h"
-
 #include "../core/Logger.h"
-#include "../objects/Object.h"
+#include "VulkanBuffers.h"
 
 namespace Pathfinding{
 

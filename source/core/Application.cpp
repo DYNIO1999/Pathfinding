@@ -80,7 +80,6 @@ namespace Pathfinding{
     }
     void Application::Shutdown(){
 
-        m_allocator->DestroyBuffer(vertexBuffer,vertexBufferAllocation);
         vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
     }
 
@@ -141,9 +140,9 @@ namespace Pathfinding{
 
         
         if(Input::KeyPressed(GLFW_KEY_W)){
-            clearColor = {{{0.0f, 1.0f, 0.5f, 1.0f}}};
+            clearColor = {{{0.025f, 0.5f, 0.025f, 1.0f}}};
         }else{
-            clearColor = {{{0.6f, 1.0f, 0.5f, 1.0f}}};
+            clearColor = {{{0.025f, 0.025f, 0.025f, 1.0f}}};
         }
 
         renderPassInfo.clearValueCount = 1;
@@ -167,13 +166,10 @@ namespace Pathfinding{
 
 
         VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer_2, &offset);
-
-
-
+       
         // calculate final mesh matrix
         view= glm::translate(glm::mat4(1.f), camPos);
-        model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
+       // model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
 
         glm::mat4 mesh_matrix = projection * view * model;
@@ -189,13 +185,16 @@ namespace Pathfinding{
         if (Input::KeyPressed(GLFW_KEY_W))
         {
             // Draw2();
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
-            vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_vertexBuffer2->BufferHandle(), &offset);
+            vkCmdBindIndexBuffer(commandBuffer,m_indexBuffer->BufferHandle(),0,VK_INDEX_TYPE_UINT32);
+            APP_ERROR("{0}", m_indexBuffer->IndexCount());
+            vkCmdDrawIndexed(commandBuffer, m_indexBuffer->IndexCount(), 1, 0, 0, 0);
         }
         else
         {
-
-            vkCmdDraw(commandBuffer, vertices_2.size(), 1, 0, 0);
+            
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_vertexBuffer->BufferHandle(), &offset);
+            vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
         }
 
 
@@ -242,34 +241,18 @@ namespace Pathfinding{
         vertices_2.emplace_back(Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         vertices_2.emplace_back(Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         vertices_2.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-
-
+        vertices_2.emplace_back(Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        
         CreateVertexBuffer();
 
+        m_indexBuffer = std::make_unique<VulkanIndexBuffer>(*m_device, *m_allocator, indices.data(), indices.size() * sizeof(uint32_t));
     }
 
     void Application::CreateVertexBuffer(){
-        VkBufferCreateInfo bufferInfo = {};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = vertices.size() * sizeof(Vertex);
-        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 
-        vertexBufferAllocation = m_allocator->AllocateBuffer(&bufferInfo, &vertexBuffer);
-        auto data = m_allocator->MapMemory(vertexBufferAllocation);
+        m_vertexBuffer = std::make_unique<VulkanVertexBuffer>(*m_device, *m_allocator, vertices.data(), vertices.size() * sizeof(Vertex));
 
-        memcpy(data, vertices.data(), vertices.size() * sizeof(Vertex));
-        m_allocator->UnmapMemory(vertexBufferAllocation);
-
-        VkBufferCreateInfo bufferInfo_2 = {};
-        bufferInfo_2.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo_2.size = vertices_2.size() * sizeof(Vertex);
-        bufferInfo_2.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-
-        vertexBufferAllocation_2 = m_allocator->AllocateBuffer(&bufferInfo_2, &vertexBuffer_2);
-        auto data2 = m_allocator->MapMemory(vertexBufferAllocation_2);
-
-        memcpy(data2, vertices_2.data(), vertices_2.size() * sizeof(Vertex));
-        m_allocator->UnmapMemory(vertexBufferAllocation_2);
+        m_vertexBuffer2 = std::make_unique<VulkanVertexBuffer>(*m_device, *m_allocator, vertices_2.data(), vertices_2.size() * sizeof(Vertex));
     }
 
 }

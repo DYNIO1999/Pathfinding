@@ -43,6 +43,7 @@ public:
 
     VkPhysicalDeviceFeatures m_physicalDeviceFeatures;
     VkPhysicalDeviceMemoryProperties m_physicalDeviceMemoryProperties;
+    uint32_t GraphicsQueueFamilyIndex(){return m_queueFamilyIndices.graphicsFamily.value();}
 
 
     VkQueue GraphicsQueueHandle() { return m_graphicsQueueHandle; }
@@ -71,6 +72,7 @@ private:
     VkPhysicalDevice m_physicalDeviceHandle = VK_NULL_HANDLE;
     VkCommandPool m_commandPoolHandle;
 
+    QueueFamilyIndicesInfo m_queueFamilyIndices;
     VkDevice m_logicalDeviceHandle;
     VkSurfaceKHR m_surfaceHandle;
     VkQueue m_graphicsQueueHandle;
