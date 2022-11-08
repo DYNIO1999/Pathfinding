@@ -97,6 +97,15 @@ namespace Pathfinding
             pipelineLayoutInfo.setLayoutCount = 0;
             pipelineLayoutInfo.pushConstantRangeCount = 0;
         }
+        
+        //Based on descriptors to let know pipline what to expect what types and how many
+
+        if(!pipelineSpecification.descriptorSetLayouts.empty()){
+            pipelineLayoutInfo.pSetLayouts = pipelineSpecification.descriptorSetLayouts.data();
+            pipelineLayoutInfo.setLayoutCount = pipelineSpecification.descriptorSetLayouts.size();
+        }else{
+            APP_ERROR("HEHEH CHECK!");
+        }
 
         if (vkCreatePipelineLayout(m_deviceRef.LogicalDeviceHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayoutHandle))
         {

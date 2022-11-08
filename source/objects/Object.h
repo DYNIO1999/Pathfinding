@@ -19,10 +19,5 @@ namespace Pathfinding{
         glm::vec4 color;
     };
 
-
-    struct UniformBuffer
-    {
-        glm::mat4 modelMatrix;
-    };
 }
 #endif

@@ -43,6 +43,7 @@ namespace Pathfinding{
             description.attributes.push_back(colorAttribute);
             return description;
         }
+
     };
 
     struct PipelinePushConstantData{
@@ -51,6 +52,7 @@ namespace Pathfinding{
 
     struct PipelineSpecification
     {
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
         std::unique_ptr<PipelinePushConstantData> pushConstantData;
         VertexInputDescription vertexInputDescription{};
         VkPipelineViewportStateCreateInfo viewportInfo;
@@ -65,6 +67,24 @@ namespace Pathfinding{
 
         uint32_t subpass = 0;
         VkRenderPass renderPass = nullptr;
+
+        void AddDescriptorSetLayout(VulkanDevice &device)
+        {
+
+            VkDescriptorSetLayout descriptorSetLayout;
+            VkDescriptorSetLayoutBinding uboLayoutBinding{};
+            uboLayoutBinding.binding = 0;
+            uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            uboLayoutBinding.descriptorCount = 1;
+            uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+            VkDescriptorSetLayoutCreateInfo layoutInfo{};
+            layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutInfo.bindingCount = 1;
+            layoutInfo.pBindings = &uboLayoutBinding;
+            VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device.LogicalDeviceHandle(), &layoutInfo, nullptr, &descriptorSetLayout));
+            descriptorSetLayouts.emplace_back(descriptorSetLayout);
+        }
     };
 
 class VulkanPipeline

@@ -14,7 +14,7 @@ namespace Pathfinding
 
         VmaAllocator AllocatorHandle() { return m_allocatorHandle;}
 
-        VmaAllocation AllocateBuffer(VkBufferCreateInfo *create_info, uint32_t flags, VkBuffer *buffer);
+        VmaAllocation AllocateBuffer(VkBufferCreateInfo *create_info, VmaMemoryUsage usage, VkBuffer *buffer);
         void DestroyBuffer(VkBuffer buffer, VmaAllocation allocation);
 
         void *MapMemory(VmaAllocation allocation);

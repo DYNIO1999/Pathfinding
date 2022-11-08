@@ -23,6 +23,9 @@ namespace Pathfinding
 
         CreateVertexBuffer();
         CreateIndexBuffer();
+        CreateUniformBuffer();
+        CreateDescriptorPool();
+        CreateDescriptorSets();
 
 
         // Init Vulkan
@@ -41,6 +44,8 @@ namespace Pathfinding
             // auto [x,y] = Input::MousePosition();
             // APP_INFO("MOUSE_POSITION  X:{} Y:{}",x,y);
             // FRAME END
+
+            UpdateUniformBuffer(m_swapchain->CurrentFrame());
             Draw();
             m_window->ProcessEvents(); // process events/inputs
 
@@ -73,7 +78,7 @@ namespace Pathfinding
         m_defaultPipelineSpec = VulkanPipeline::DefaultPipelineSpecification(m_swapchain->RenderPassHandle());
         m_defaultPipelineSpec.vertexInputDescription = VertexInputDescription::GetVertexDescription();
         m_defaultPipelineSpec.pushConstantData = std::make_unique<PipelinePushConstantData>(PipelinePushConstantData{glm::mat4(1.0f)});
-
+        m_defaultPipelineSpec.AddDescriptorSetLayout(*m_device);
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
 
         CreateCommandBuffers();
@@ -100,7 +105,7 @@ namespace Pathfinding
             APP_ERROR("DOESNT WORK");
         }
     }
-    void Application::Draw()
+void Application::Draw()
     {
         uint32_t imageIndex;
         VkResult acquireResult = m_swapchain->AcquireNextImage(&imageIndex);
@@ -171,21 +176,36 @@ namespace Pathfinding
         VkDeviceSize offset = 0;
 
         // calculate final mesh matrix
-        view = glm::translate(glm::mat4(1.f), camPos);
-        model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
+        //view = glm::translate(glm::mat4(1.f), camPos);
+        //model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
+        //model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
+        //glm::mat4 mesh_matrix = projection * view * model;
 
-        glm::mat4 mesh_matrix = projection * view * model;
-        PipelinePushConstantData constant;
-        constant.projection = mesh_matrix;
+        
+
 
         // upload the matrix to the GPU via push constants
-        vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
 
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.bufferHandle, &offset);
         vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer.bufferHandle,0, VK_INDEX_TYPE_UINT32);
         //vkCmdDraw(commandBuffer, m_vertices.size(), 1, 0, 0);
-        vkCmdDrawIndexed(commandBuffer,m_indices.size(),1,0,0,0);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 0, 1, &m_descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
+        PipelinePushConstantData constant;
+        for(int i=0;i<1;i++){
+
+        
+            //if(Input::KeyPressed(GLFW_KEY_W)){
+            constant.projection = transforms[i];
+            //}
+            vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
+            // calculate final mesh matrix
+            //view = glm::translate(glm::mat4(1.f), camPos);
+            //model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
+            //model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
+            //glm::mat4 mesh_matrix = projection * view * model;
+            vkCmdDrawIndexed(commandBuffer,m_indices.size(),1,0,0,0);
+        }
+
         vkCmdEndRenderPass(commandBuffer);
         // End Render Pass
         vkEndCommandBuffer(commandBuffer);
@@ -213,6 +233,10 @@ namespace Pathfinding
         m_vertices.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         m_vertices.emplace_back(Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
 
+        transforms.resize(10);
+        for(int i=0;i<10;i++){
+            transforms[i] =glm::mat4(1);
+        }   
     }
 
     void Application::CreateVertexBuffer()
@@ -221,7 +245,7 @@ namespace Pathfinding
 
         VkBufferCreateInfo bufferCreateInfo1 = VulkanInitializers::BufferCreateInfo(
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE, m_vertices.size() * sizeof(Vertex));
-        m_vertexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, 0, &m_vertexBuffer.bufferHandle);
+        m_vertexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_vertexBuffer.bufferHandle);
 
         VkBufferCreateInfo bufferCreateInfo{};
 
@@ -233,7 +257,7 @@ namespace Pathfinding
         VmaAllocation stagingBufferAllocation =
             m_allocator->AllocateBuffer(
                 &bufferCreateInfo,
-                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+                VMA_MEMORY_USAGE_CPU_TO_GPU,
                 &stagingBuffer.bufferHandle);
 
         stagingBuffer.data = m_allocator->MapMemory(stagingBufferAllocation);
@@ -292,7 +316,7 @@ namespace Pathfinding
         VkBufferCreateInfo bufferCreateInfo1 = VulkanInitializers::BufferCreateInfo(
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE,
             sizeof(m_indices[0]) * m_indices.size());
-        m_vertexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, 0, &m_indexBuffer.bufferHandle);
+        m_vertexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_indexBuffer.bufferHandle);
 
         VkBufferCreateInfo bufferCreateInfo{};
 
@@ -304,7 +328,7 @@ namespace Pathfinding
         VmaAllocation stagingBufferAllocation =
             m_allocator->AllocateBuffer(
                 &bufferCreateInfo,
-                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+                VMA_MEMORY_USAGE_CPU_TO_GPU,
                 &stagingBuffer.bufferHandle);
 
         stagingBuffer.data = m_allocator->MapMemory(stagingBufferAllocation);
@@ -355,5 +379,98 @@ namespace Pathfinding
         vkDestroyCommandPool(m_device->LogicalDeviceHandle(), cmdPool, nullptr);
         m_allocator->DestroyBuffer(stagingBuffer.bufferHandle, stagingBufferAllocation);
         vkDestroyFence(m_device->LogicalDeviceHandle(), fence, nullptr);
+    }
+
+    void Application::CreateUniformBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(UniformBuffer::Values);
+
+        m_uniformBuffers.resize(m_swapchain->MAX_FRAMES_IN_FLIGHT);
+        
+        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++){
+        VkMemoryAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.pNext = nullptr;
+        allocInfo.allocationSize = 0;
+        allocInfo.memoryTypeIndex = 0;
+
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        bufferInfo.size = bufferSize;
+        m_uniformBuffers[i].allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_uniformBuffers[i].bufferHandle);
+        m_uniformBuffers[i].data = m_allocator->MapMemory(m_uniformBuffers[i].allocationHandle);
+    }
+    }
+    void Application::UpdateUniformBuffer(uint32_t currentFrame)
+    {
+        UniformBuffer::Values uboValues{};
+        
+        model = glm::rotate(model, glm::radians(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
+
+        uboValues.model =model;
+        uboValues.proj =projection;
+        uboValues.view =view;
+
+        if (Input::KeyPressed(GLFW_KEY_D))
+        {
+            view = glm::translate(view, glm::vec3(-0.001f, 0.0, 0.0));
+            APP_ERROR("MOVING");
+        }
+
+
+        memcpy(m_uniformBuffers[currentFrame].data, &uboValues, sizeof(UniformBuffer::Values));
+       
+        for(int i=0;i<10;i++){
+            transforms[i] = glm::translate(transforms[i], glm::vec3(0.0001f, 0.0f, 0.0f));
+        }
+
+
+    }
+    void Application::CreateDescriptorPool()
+    {
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = static_cast<uint32_t>(m_swapchain->MAX_FRAMES_IN_FLIGHT);
+
+        VkDescriptorPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = 1;
+        poolInfo.pPoolSizes = &poolSize;
+        poolInfo.maxSets = static_cast<uint32_t>(m_swapchain->MAX_FRAMES_IN_FLIGHT+1);
+
+        VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->LogicalDeviceHandle(), &poolInfo, nullptr, &m_descriptorPool));
+    }
+    void Application::CreateDescriptorSets()
+    {
+        std::vector<VkDescriptorSetLayout> layouts(m_swapchain->MAX_FRAMES_IN_FLIGHT, m_defaultPipelineSpec.descriptorSetLayouts[0]);
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = m_descriptorPool;
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(m_swapchain->MAX_FRAMES_IN_FLIGHT);
+        allocInfo.pSetLayouts = layouts.data();
+
+        m_descriptors.resize(m_swapchain->MAX_FRAMES_IN_FLIGHT);
+        vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, m_descriptors.data());
+
+        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = m_uniformBuffers[i].bufferHandle;
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBuffer::Values);
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = m_descriptors[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+
+            vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &descriptorWrite, 0, nullptr);
+        }
     }
 }
