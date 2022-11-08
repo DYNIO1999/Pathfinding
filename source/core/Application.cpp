@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "../input/Input.h"
-namespace Pathfinding{
+namespace Pathfinding
+{
 
     std::shared_ptr<Window> Application::m_window;
     bool Application::m_enableValidation = false;
@@ -8,60 +9,60 @@ namespace Pathfinding{
     Application::Application(bool enableValidation)
     {
         m_enableValidation = enableValidation;
-    
     }
-    Application::~Application(){
-
+    Application::~Application()
+    {
     }
 
-    void Application::Run(){
-        //Timer timer(true);
+    void Application::Run()
+    {
+        // Timer timer(true);
         Initialize();
         InitObjects();
-      
 
 
-        //Init Vulkan
+        CreateVertexBuffer();
+        CreateIndexBuffer();
+
+
+        // Init Vulkan
         while (m_window->IsOpen())
         {
 
-            //Delta Time
+            // Delta Time
             m_deltaTime.Update(static_cast<float>(glfwGetTime()));
-            //APP_TRACE("Delta Time: {}", m_deltaTime.AsMiliSeconds());
-            //Delta Time
-            
-            //FRAME START
-            //dooo update
-            //doo render
+            // APP_TRACE("Delta Time: {}", m_deltaTime.AsMiliSeconds());
+            // Delta Time
 
-            //auto [x,y] = Input::MousePosition();
-            //APP_INFO("MOUSE_POSITION  X:{} Y:{}",x,y);
-            //FRAME END
+            // FRAME START
+            // dooo update
+            // doo render
+
+            // auto [x,y] = Input::MousePosition();
+            // APP_INFO("MOUSE_POSITION  X:{} Y:{}",x,y);
+            // FRAME END
             Draw();
-            m_window->ProcessEvents(); //process events/inputs                        
-            
+            m_window->ProcessEvents(); // process events/inputs
+
             m_fpsCounter.Update();
-            
-            //if(m_fpsCounter.GetFPS()>0)
-            //    APP_TRACE("FPS {}", m_fpsCounter.GetFPS());
-            
+
+            // if(m_fpsCounter.GetFPS()>0)
+            //     APP_TRACE("FPS {}", m_fpsCounter.GetFPS());
         }
         Shutdown();
+    }
 
-    } 
-
-
-    void Application::Initialize(){
-
+    void Application::Initialize()
+    {
 
         std::filesystem::path cwd = std::filesystem::current_path();
-        std::cout<<cwd<<'\n';
-        
-        Timer timer(true,GET_NAME(Initialize()));
-        
+        std::cout << cwd << '\n';
+
+        Timer timer(true, GET_NAME(Initialize()));
+
         Logger::Init();
 
-        m_window = std::make_shared<Window>(1600,900,std::move("Pathfinding"));
+        m_window = std::make_shared<Window>(1600, 900, std::move("Pathfinding"));
         m_context = std::make_unique<VulkanContext>();
 
         m_device = std::make_unique<VulkanDevice>();
@@ -74,16 +75,17 @@ namespace Pathfinding{
         m_defaultPipelineSpec.pushConstantData = std::make_unique<PipelinePushConstantData>(PipelinePushConstantData{glm::mat4(1.0f)});
 
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
-        
 
         CreateCommandBuffers();
     }
-    void Application::Shutdown(){
-
+    void Application::Shutdown()
+    {
+        m_allocator->DestroyBuffer(m_vertexBuffer.bufferHandle, m_vertexBuffer.allocationHandle);
         vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
     }
 
-    void Application::CreateCommandBuffers(){
+    void Application::CreateCommandBuffers()
+    {
         commandBuffers.resize(2);
 
         VkCommandBufferAllocateInfo allocInfo{};
@@ -98,10 +100,12 @@ namespace Pathfinding{
             APP_ERROR("DOESNT WORK");
         }
     }
-    void Application::Draw(){
+    void Application::Draw()
+    {
         uint32_t imageIndex;
         VkResult acquireResult = m_swapchain->AcquireNextImage(&imageIndex);
-        if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR){
+        if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
+        {
             vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
 
             if (m_swapchain == nullptr)
@@ -120,14 +124,12 @@ namespace Pathfinding{
             APP_ERROR("Failed to acquire swap chain image!");
         }
 
-
         VkCommandBuffer commandBuffer = commandBuffers[m_swapchain->CurrentFrame()];
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
         vkBeginCommandBuffer(commandBuffer, &beginInfo);
-        
-        
+
         // Render Pass
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -138,17 +140,19 @@ namespace Pathfinding{
         renderPassInfo.renderArea.extent = m_swapchain->Extent();
         VkClearValue clearColor;
 
-        
-        if(Input::KeyPressed(GLFW_KEY_W)){
+        if (Input::KeyPressed(GLFW_KEY_W))
+        {
             clearColor = {{{0.025f, 0.5f, 0.025f, 1.0f}}};
-        }else{
+        }
+        else
+        {
             clearColor = {{{0.025f, 0.025f, 0.025f, 1.0f}}};
         }
 
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
-
+        // Begin Render Pass
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport viewport{};
@@ -164,64 +168,29 @@ namespace Pathfinding{
 
         m_defaultPipline->Bind(commandBuffer);
 
-
         VkDeviceSize offset = 0;
-       
+
         // calculate final mesh matrix
-        view= glm::translate(glm::mat4(1.f), camPos);
-       // model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
+        view = glm::translate(glm::mat4(1.f), camPos);
+        model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
 
         glm::mat4 mesh_matrix = projection * view * model;
         PipelinePushConstantData constant;
         constant.projection = mesh_matrix;
 
-
         // upload the matrix to the GPU via push constants
         vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
 
-        // we can now draw
-
-        if (Input::KeyPressed(GLFW_KEY_W))
-        {
-            // Draw2();
-           
-        }
-        else
-        {
-            
-
-        }
-
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_vertexBuffer2->BufferHandle(), &offset);
-        vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->BufferHandle(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(commandBuffer, m_indexBuffer->IndexCount(), 1, 0, 0, 0);
-
-        constant.projection = glm::translate(mesh_matrix,glm::vec3(4.0f,0.0f,0.0f));
-        vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
-
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_vertexBuffer->BufferHandle(), &offset);
-        vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
-
-        if (Input::KeyPressed(GLFW_KEY_W))
-        {
-            constant.projection = glm::translate(mesh_matrix, glm::vec3(-4.0f, 0.0f, 0.0f));
-            vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_vertexBuffer->BufferHandle(), &offset);
-            vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
-        }
-
-
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.bufferHandle, &offset);
+        vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer.bufferHandle,0, VK_INDEX_TYPE_UINT32);
+        //vkCmdDraw(commandBuffer, m_vertices.size(), 1, 0, 0);
+        vkCmdDrawIndexed(commandBuffer,m_indices.size(),1,0,0,0);
         vkCmdEndRenderPass(commandBuffer);
-        // Render Pass
-
-
-
+        // End Render Pass
         vkEndCommandBuffer(commandBuffer);
 
-
-        
-        VkResult submitResult= m_swapchain->SubmitCommandBuffers(&commandBuffer, &imageIndex);
+        VkResult submitResult = m_swapchain->SubmitCommandBuffers(&commandBuffer, &imageIndex);
         if (submitResult == VK_ERROR_OUT_OF_DATE_KHR || submitResult == VK_SUBOPTIMAL_KHR)
         {
             vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
@@ -235,38 +204,156 @@ namespace Pathfinding{
                 m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, oldSwapChain);
             }
         }
+    }
+
+    void Application::InitObjects()
+    {
+        m_vertices.emplace_back(Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
 
     }
 
-    void Application::InitObjects(){
-        vertices.emplace_back(Vertex{glm::vec3(-0.5f,-0.5f,0.0f), glm::vec4(1.0f,1.0f,0.5f,0.0f)});
-        vertices.emplace_back(Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        vertices.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        vertices.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        vertices.emplace_back(Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        vertices.emplace_back(Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+    void Application::CreateVertexBuffer()
+    {
+        // m_vertexBuffer.allocationHandle
 
-        for (auto &i : vertices)
-        {
-            APP_WARN("Position {}", glm::to_string(i.position));
-            APP_WARN("Color {}", glm::to_string(i.color));
-        }
+        VkBufferCreateInfo bufferCreateInfo1 = VulkanInitializers::BufferCreateInfo(
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE, m_vertices.size() * sizeof(Vertex));
+        m_vertexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, 0, &m_vertexBuffer.bufferHandle);
 
-        vertices_2.emplace_back(Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        vertices_2.emplace_back(Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        vertices_2.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        vertices_2.emplace_back(Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        VkBufferCreateInfo bufferCreateInfo{};
 
-        CreateVertexBuffer();
+        bufferCreateInfo = VulkanInitializers::BufferCreateInfo(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                                                VK_SHARING_MODE_EXCLUSIVE,
+                                                                m_vertices.size() * sizeof(Vertex));
+        VulkanBuffer stagingBuffer;
 
-        m_indexBuffer = std::make_unique<VulkanIndexBuffer>(*m_device, *m_allocator, indices.data(), indices.size() * sizeof(uint32_t));
+        VmaAllocation stagingBufferAllocation =
+            m_allocator->AllocateBuffer(
+                &bufferCreateInfo,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+                &stagingBuffer.bufferHandle);
+
+        stagingBuffer.data = m_allocator->MapMemory(stagingBufferAllocation);
+        memcpy(stagingBuffer.data, m_vertices.data(), m_vertices.size() * sizeof(Vertex));
+        m_allocator->UnmapMemory(stagingBufferAllocation);
+
+        VkCommandPool cmdPool;
+
+        VkCommandPoolCreateInfo cmdPoolCreateInfo{};
+        cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        cmdPoolCreateInfo.queueFamilyIndex = m_device->GraphicsQueueFamilyIndex();
+        cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+
+        VK_CHECK_RESULT(vkCreateCommandPool(m_device->LogicalDeviceHandle(), &cmdPoolCreateInfo, VK_NULL_HANDLE, &cmdPool));
+
+        VkCommandBuffer cmdBuffer;
+
+        VkCommandBufferAllocateInfo cmdBufferAllocateInfo{};
+        cmdBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        cmdBufferAllocateInfo.commandPool = cmdPool;
+        cmdBufferAllocateInfo.commandBufferCount = 1;
+        cmdBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        vkAllocateCommandBuffers(m_device->LogicalDeviceHandle(), &cmdBufferAllocateInfo, &cmdBuffer);
+
+        VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(cmdBuffer, &commandBufferBeginInfo);
+        VkBufferCopy bufferCopy = {};
+        bufferCopy.size = m_vertices.size() * sizeof(Vertex);
+        vkCmdCopyBuffer(cmdBuffer, stagingBuffer.bufferHandle, m_vertexBuffer.bufferHandle, 1, &bufferCopy);
+        vkEndCommandBuffer(cmdBuffer);
+
+
+        VkFence fence;
+        VkFenceCreateInfo fenceCreateInfo = {};
+        fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        VK_CHECK_RESULT(vkCreateFence(m_device->LogicalDeviceHandle(), &fenceCreateInfo, nullptr, &fence));
+
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &cmdBuffer;
+
+        VK_CHECK_RESULT(vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo, fence));
+        vkWaitForFences(m_device->LogicalDeviceHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
+
+        vkDestroyCommandPool(m_device->LogicalDeviceHandle(), cmdPool, nullptr);
+        m_allocator->DestroyBuffer(stagingBuffer.bufferHandle, stagingBufferAllocation);
+        vkDestroyFence(m_device->LogicalDeviceHandle(), fence, nullptr);
     }
+    void Application::CreateIndexBuffer()
+    {
 
-    void Application::CreateVertexBuffer(){
+        VkBufferCreateInfo bufferCreateInfo1 = VulkanInitializers::BufferCreateInfo(
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE,
+            sizeof(m_indices[0]) * m_indices.size());
+        m_vertexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, 0, &m_indexBuffer.bufferHandle);
 
-        m_vertexBuffer = std::make_unique<VulkanVertexBuffer>(*m_device, *m_allocator, vertices.data(), vertices.size() * sizeof(Vertex));
+        VkBufferCreateInfo bufferCreateInfo{};
 
-        m_vertexBuffer2 = std::make_unique<VulkanVertexBuffer>(*m_device, *m_allocator, vertices_2.data(), vertices_2.size() * sizeof(Vertex));
+        bufferCreateInfo = VulkanInitializers::BufferCreateInfo(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                                                VK_SHARING_MODE_EXCLUSIVE,
+                                                                sizeof(m_indices[0]) * m_indices.size());
+        VulkanBuffer stagingBuffer;
+
+        VmaAllocation stagingBufferAllocation =
+            m_allocator->AllocateBuffer(
+                &bufferCreateInfo,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+                &stagingBuffer.bufferHandle);
+
+        stagingBuffer.data = m_allocator->MapMemory(stagingBufferAllocation);
+        memcpy(stagingBuffer.data, m_indices.data(), sizeof(m_indices[0]) * m_indices.size());
+        m_allocator->UnmapMemory(stagingBufferAllocation);
+
+        VkCommandPool cmdPool;
+
+        VkCommandPoolCreateInfo cmdPoolCreateInfo{};
+        cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        cmdPoolCreateInfo.queueFamilyIndex = m_device->GraphicsQueueFamilyIndex();
+        cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+
+        VK_CHECK_RESULT(vkCreateCommandPool(m_device->LogicalDeviceHandle(), &cmdPoolCreateInfo, VK_NULL_HANDLE, &cmdPool));
+
+        VkCommandBuffer cmdBuffer;
+
+        VkCommandBufferAllocateInfo cmdBufferAllocateInfo{};
+        cmdBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        cmdBufferAllocateInfo.commandPool = cmdPool;
+        cmdBufferAllocateInfo.commandBufferCount = 1;
+        cmdBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        vkAllocateCommandBuffers(m_device->LogicalDeviceHandle(), &cmdBufferAllocateInfo, &cmdBuffer);
+
+        VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(cmdBuffer, &commandBufferBeginInfo);
+        VkBufferCopy bufferCopy = {};
+        bufferCopy.size = sizeof(m_indices[0]) * m_indices.size();
+        vkCmdCopyBuffer(cmdBuffer, stagingBuffer.bufferHandle, m_indexBuffer.bufferHandle, 1, &bufferCopy);
+        vkEndCommandBuffer(cmdBuffer);
+
+        VkFence fence;
+        VkFenceCreateInfo fenceCreateInfo = {};
+        fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        VK_CHECK_RESULT(vkCreateFence(m_device->LogicalDeviceHandle(), &fenceCreateInfo, nullptr, &fence));
+
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &cmdBuffer;
+
+        VK_CHECK_RESULT(vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo, fence));
+        vkWaitForFences(m_device->LogicalDeviceHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
+
+        vkDestroyCommandPool(m_device->LogicalDeviceHandle(), cmdPool, nullptr);
+        m_allocator->DestroyBuffer(stagingBuffer.bufferHandle, stagingBufferAllocation);
+        vkDestroyFence(m_device->LogicalDeviceHandle(), fence, nullptr);
     }
 }
-

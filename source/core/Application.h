@@ -16,28 +16,21 @@
 #include "../renderer/VulkanSwapChain.h"
 #include "../renderer/VulkanPipeline.h"
 #include "../renderer/VulkanAllocator.h"
-#include "../renderer/VulkanBuffers.h"
 
 #include "../objects/Object.h"
-
+#include "../renderer/VulkanInitializers.h"
 #include "Logger.h"
 
 
 namespace Pathfinding{
 
 
-
-struct ShaderData{
-    glm::mat4 projection;
-    glm::mat4 view;
-    glm::vec4 viewPos;
+struct VulkanBuffer{
+    VkBuffer bufferHandle = VK_NULL_HANDLE;
+    VmaAllocation allocationHandle;
+    float size;
+    void* data; 
 };
-struct Mesh
-{
-    glm::mat4 modelMatrix;
-    VkDescriptorSet descriptorSet;
-};
-
 
 class Application
 {
@@ -74,37 +67,25 @@ private:
     PipelineSpecification m_defaultPipelineSpec{};
 
     std::vector<VkCommandBuffer> commandBuffers;
+
+   
+
     
-    //TESTING DATA BELOW
-    std::unique_ptr<VulkanIndexBuffer> m_indexBuffer;
-    std::unique_ptr<VulkanVertexBuffer> m_vertexBuffer;
-    std::unique_ptr<VulkanVertexBuffer> m_vertexBuffer2;
+    //Testing
 
-    std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
-
-    std::vector<Vertex> vertices;
-    std::vector<Vertex> vertices_2;
     void CreateVertexBuffer();
+    void CreateIndexBuffer();
 
     glm::vec3 camPos = {0.f, 0.f, -2.f};
-
     glm::mat4 view;
-    // camera projection
     glm::mat4 projection = glm::perspective(glm::radians(70.f), 1600.f / 900.f, 0.1f, 200.0f);
-    // model rotation
     glm::mat4 model = glm::mat4(1);
 
 
-
-
-
-    //Testing Descriptors
-    std::vector<Mesh> m_objects;
-    VkDescriptorSet globalDescriptorSet;
-
-
-
-
+    VulkanBuffer m_vertexBuffer{};
+    VulkanBuffer m_indexBuffer{};
+    std::vector<Vertex> m_vertices;
+    std::vector<u_int32_t> m_indices{0, 1, 2, 2, 3, 0};
 };
 }
 #endif

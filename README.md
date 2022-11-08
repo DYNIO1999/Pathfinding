@@ -11,7 +11,7 @@ Create Window [DONE]
     - Callbacks
 Input [DONE]
 
-# DEADLINE [/7/8/9]
+# DEADLINE [/8/9/10]
 Engine initialization | Boilerplate
     Create Instance [DONE]
      -  enable validation layers
@@ -27,18 +27,17 @@ Engine initialization | Boilerplate
     RecordingCommands [DONE]
     Drawing Triangle [DONE]
     Code Refactoring [DONE]
-    Constant Buffer [DONE]
+    Push Constant Buffer [DONE]
     VertexBuffers [DONE] [NOT_GOOD_ENOUGH]
     StagingBuffer [DONE] [NOT_GOOD_ENOUGH]
     IndexBuffers [DONE] [NOT_GOOD_ENOUGH]
     
     Descriptors[]    
-    UniformBuffer []
     Camera 3D []
-
+    UniformBuffer []
     Grid/Scene[]
-     
-# DEADLINE [/10/11/12/13/14]
+
+# DEADLINE [/11/12/13/14]
     ComputePipeline[]    
     Textures [] ??
     CubeMap [] ??
@@ -47,8 +46,7 @@ Engine initialization | Boilerplate
     ComputePipeline
     Pathfinding GPU
     Pathfinding CPU side?
-
-
+    Abstraction/Encapsulation?
 
 # DEADLINE []
 ImGUI Support
