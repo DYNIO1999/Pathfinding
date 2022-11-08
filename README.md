@@ -28,19 +28,20 @@ Engine initialization | Boilerplate
     Drawing Triangle [DONE]
     Code Refactoring [DONE]
     Constant Buffer [DONE]
-
-    VertexBuffers []
-    StagingBuffer []
-    IndexBuffers []
+    VertexBuffers [DONE] [NOT_GOOD_ENOUGH]
+    StagingBuffer [DONE] [NOT_GOOD_ENOUGH]
+    IndexBuffers [DONE] [NOT_GOOD_ENOUGH]
+    
     Descriptors[]    
     UniformBuffer []
+    Camera 3D []
 
+    Grid/Scene[]
+     
 # DEADLINE [/10/11/12/13/14]
     ComputePipeline[]    
     Textures [] ??
-    Grid []
-    Camera 3D [] 
-    CubeMap []
+    CubeMap [] ??
 
 # DEADLINE [15/16/17/18/19/20]
     ComputePipeline

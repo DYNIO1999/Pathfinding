@@ -185,14 +185,28 @@ namespace Pathfinding{
         if (Input::KeyPressed(GLFW_KEY_W))
         {
             // Draw2();
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_vertexBuffer2->BufferHandle(), &offset);
-            vkCmdBindIndexBuffer(commandBuffer,m_indexBuffer->BufferHandle(),0,VK_INDEX_TYPE_UINT32);
-            APP_ERROR("{0}", m_indexBuffer->IndexCount());
-            vkCmdDrawIndexed(commandBuffer, m_indexBuffer->IndexCount(), 1, 0, 0, 0);
+           
         }
         else
         {
             
+
+        }
+
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_vertexBuffer2->BufferHandle(), &offset);
+        vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->BufferHandle(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(commandBuffer, m_indexBuffer->IndexCount(), 1, 0, 0, 0);
+
+        constant.projection = glm::translate(mesh_matrix,glm::vec3(4.0f,0.0f,0.0f));
+        vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
+
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_vertexBuffer->BufferHandle(), &offset);
+        vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
+
+        if (Input::KeyPressed(GLFW_KEY_W))
+        {
+            constant.projection = glm::translate(mesh_matrix, glm::vec3(-4.0f, 0.0f, 0.0f));
+            vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_vertexBuffer->BufferHandle(), &offset);
             vkCmdDraw(commandBuffer, vertices.size(), 1, 0, 0);
         }
@@ -242,7 +256,7 @@ namespace Pathfinding{
         vertices_2.emplace_back(Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         vertices_2.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         vertices_2.emplace_back(Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        
+
         CreateVertexBuffer();
 
         m_indexBuffer = std::make_unique<VulkanIndexBuffer>(*m_device, *m_allocator, indices.data(), indices.size() * sizeof(uint32_t));
@@ -254,6 +268,5 @@ namespace Pathfinding{
 
         m_vertexBuffer2 = std::make_unique<VulkanVertexBuffer>(*m_device, *m_allocator, vertices_2.data(), vertices_2.size() * sizeof(Vertex));
     }
-
 }
 

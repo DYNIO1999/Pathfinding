@@ -19,10 +19,6 @@ namespace Pathfinding{
         glm::vec4 color;
     };
 
-    struct Mesh{
-        glm::mat4 modelMatrix;
-        VkDescriptorSet descriptorSet;
-    };
 
     struct UniformBuffer
     {

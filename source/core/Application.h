@@ -20,12 +20,24 @@
 
 #include "../objects/Object.h"
 
-
-
 #include "Logger.h"
 
 
 namespace Pathfinding{
+
+
+
+struct ShaderData{
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::vec4 viewPos;
+};
+struct Mesh
+{
+    glm::mat4 modelMatrix;
+    VkDescriptorSet descriptorSet;
+};
+
 
 class Application
 {
@@ -83,7 +95,16 @@ private:
     glm::mat4 model = glm::mat4(1);
 
 
+
+
+
+    //Testing Descriptors
     std::vector<Mesh> m_objects;
+    VkDescriptorSet globalDescriptorSet;
+
+
+
+
 };
 }
 #endif
