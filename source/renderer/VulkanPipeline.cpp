@@ -183,7 +183,7 @@ namespace Pathfinding
         pipelineSpecification.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         pipelineSpecification.rasterizationInfo.depthClampEnable = VK_FALSE;
         pipelineSpecification.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
-        pipelineSpecification.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
+        pipelineSpecification.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL; // whole objectVK_POLYGON_MODE_LINE;
         pipelineSpecification.rasterizationInfo.lineWidth = 1.0f;
         pipelineSpecification.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
         pipelineSpecification.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;

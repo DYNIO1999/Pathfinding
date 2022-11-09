@@ -44,8 +44,9 @@ namespace Pathfinding
             // auto [x,y] = Input::MousePosition();
             // APP_INFO("MOUSE_POSITION  X:{} Y:{}",x,y);
             // FRAME END
-
-            UpdateUniformBuffer(m_swapchain->CurrentFrame());
+            for(int i=0;i<20;i++){
+            UpdateUniformBuffer(i);
+            }
             Draw();
             m_window->ProcessEvents(); // process events/inputs
 
@@ -189,22 +190,29 @@ void Application::Draw()
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.bufferHandle, &offset);
         vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer.bufferHandle,0, VK_INDEX_TYPE_UINT32);
         //vkCmdDraw(commandBuffer, m_vertices.size(), 1, 0, 0);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 0, 1, &m_descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
-        PipelinePushConstantData constant;
-        for(int i=0;i<1;i++){
+        for(int i=0;i<20;i++){
+            PipelinePushConstantData constant;
+            constant.projection = glm::mat4(1);
 
-        
-            //if(Input::KeyPressed(GLFW_KEY_W)){
-            constant.projection = transforms[i];
-            //}
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 0, 1, &m_descriptors[i], 0, nullptr);
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
-            // calculate final mesh matrix
-            //view = glm::translate(glm::mat4(1.f), camPos);
-            //model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
-            //model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
-            //glm::mat4 mesh_matrix = projection * view * model;
-            vkCmdDrawIndexed(commandBuffer,m_indices.size(),1,0,0,0);
+            vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
         }
+
+        //for(int i=0;i<1;i++){
+        //    //if(Input::KeyPressed(GLFW_KEY_W)){
+        //    constant.projection = transforms[i];
+        //    //}
+        //    vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
+        //    // calculate final mesh matrix
+        //    //view = glm::translate(glm::mat4(1.f), camPos);
+        //    //model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
+        //    //model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
+        //    //glm::mat4 mesh_matrix = projection * view * model;
+        //    vkCmdDrawIndexed(commandBuffer,m_indices.size(),1,0,0,0);
+        //}
+
+       
 
         vkCmdEndRenderPass(commandBuffer);
         // End Render Pass
@@ -385,9 +393,9 @@ void Application::Draw()
     {
         VkDeviceSize bufferSize = sizeof(UniformBuffer::Values);
 
-        m_uniformBuffers.resize(m_swapchain->MAX_FRAMES_IN_FLIGHT);
+        m_uniformBuffers.resize(20);
         
-        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++){
+        for (size_t i = 0; i < 20; i++){
         VkMemoryAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.pNext = nullptr;
@@ -404,27 +412,30 @@ void Application::Draw()
     }
     void Application::UpdateUniformBuffer(uint32_t currentFrame)
     {
-        UniformBuffer::Values uboValues{};
-        
-        model = glm::rotate(model, glm::radians(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
 
-        uboValues.model =model;
-        uboValues.proj =projection;
-        uboValues.view =view;
 
         if (Input::KeyPressed(GLFW_KEY_D))
         {
-            view = glm::translate(view, glm::vec3(-0.001f, 0.0, 0.0));
-            APP_ERROR("MOVING");
+            view = glm::translate(view, glm::vec3(-0.0001f, 0.0, 0.0));
+          
+        }
+        if(Input::KeyPressed(GLFW_KEY_S)){
+            view = glm::translate(view, glm::vec3(0.0f, -0.00001f, 0.0));
         }
 
+        UniformBuffer::Values uboValues{};
+        uboValues.model = model;
+        uboValues.proj = projection;
+        uboValues.view = view;
+
+        transforms[currentFrame] =glm::translate(transforms[currentFrame], glm::vec3((m_deltaTime.AsSeconds()*0.1f)* (currentFrame+1), m_deltaTime.AsSeconds()*(0.01f) * (currentFrame+1), -((m_deltaTime.AsSeconds()*0.01f)* (currentFrame+1))));
+        uboValues.model = transforms[currentFrame];
 
         memcpy(m_uniformBuffers[currentFrame].data, &uboValues, sizeof(UniformBuffer::Values));
-       
-        for(int i=0;i<10;i++){
-            transforms[i] = glm::translate(transforms[i], glm::vec3(0.0001f, 0.0f, 0.0f));
-        }
+
+        //for(int i=0;i<10;i++){
+        //  = glm::translate(transforms[i], glm::vec3(0.0001f, 0.0f, 0.0f));
+        //}
 
 
     }
@@ -432,29 +443,29 @@ void Application::Draw()
     {
         VkDescriptorPoolSize poolSize{};
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = static_cast<uint32_t>(m_swapchain->MAX_FRAMES_IN_FLIGHT);
+        poolSize.descriptorCount = static_cast<uint32_t>(20);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
         poolInfo.pPoolSizes = &poolSize;
-        poolInfo.maxSets = static_cast<uint32_t>(m_swapchain->MAX_FRAMES_IN_FLIGHT+1);
+        poolInfo.maxSets = 1000;
 
         VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->LogicalDeviceHandle(), &poolInfo, nullptr, &m_descriptorPool));
     }
     void Application::CreateDescriptorSets()
     {
-        std::vector<VkDescriptorSetLayout> layouts(m_swapchain->MAX_FRAMES_IN_FLIGHT, m_defaultPipelineSpec.descriptorSetLayouts[0]);
+        std::vector<VkDescriptorSetLayout> layouts(20, m_defaultPipelineSpec.descriptorSetLayouts[0]);
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = m_descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(m_swapchain->MAX_FRAMES_IN_FLIGHT);
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(20);
         allocInfo.pSetLayouts = layouts.data();
 
-        m_descriptors.resize(m_swapchain->MAX_FRAMES_IN_FLIGHT);
+        m_descriptors.resize(20);
         vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, m_descriptors.data());
 
-        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        for (size_t i = 0; i < 20; i++)
         {
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = m_uniformBuffers[i].bufferHandle;
