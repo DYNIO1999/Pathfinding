@@ -20,7 +20,7 @@ namespace Pathfinding
         Initialize();
         InitObjects();
 
-
+        CreateCommandBuffers();
         CreateVertexBuffer();
         CreateIndexBuffer();
         CreateUniformBuffer();
@@ -45,6 +45,8 @@ namespace Pathfinding
             // APP_INFO("MOUSE_POSITION  X:{} Y:{}",x,y);
             // FRAME END
 
+         
+            m_camera->Update(m_deltaTime.AsSeconds());
             UpdateUniformBuffer(m_swapchain->CurrentFrame());
             Draw();
             m_window->ProcessEvents(); // process events/inputs
@@ -81,7 +83,9 @@ namespace Pathfinding
         m_defaultPipelineSpec.AddDescriptorSetLayout(*m_device);
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
 
-        CreateCommandBuffers();
+
+
+        m_camera = std::make_unique<Camera>(1600.0f,900.0f);
     }
     void Application::Shutdown()
     {
@@ -145,14 +149,14 @@ void Application::Draw()
         renderPassInfo.renderArea.extent = m_swapchain->Extent();
         VkClearValue clearColor;
 
-        if (Input::KeyPressed(GLFW_KEY_W))
-        {
-            clearColor = {{{0.025f, 0.5f, 0.025f, 1.0f}}};
-        }
-        else
-        {
-            clearColor = {{{0.025f, 0.025f, 0.025f, 1.0f}}};
-        }
+        //if (Input::KeyPressed(GLFW_KEY_W))
+        //{
+        //    clearColor = {{{0.025f, 0.5f, 0.025f, 1.0f}}};
+        //}
+        //else
+        //{
+        clearColor = {{{0.025f, 0.025f, 0.025f, 1.0f}}};
+        //}
 
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
@@ -223,12 +227,19 @@ void Application::Draw()
 
     void Application::InitObjects()
     {
-        m_vertices.emplace_back(Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        m_vertices.emplace_back(Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        m_vertices.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
-        m_vertices.emplace_back(Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
 
-        m_objectsData.resize(100);
+        
+        m_vertices.emplace_back(Vertex{glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(1.0f, 1.0f, -1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(1.0f, -1.0f, -1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(1.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(-1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+        m_vertices.emplace_back(Vertex{glm::vec3(1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
+
+                
+        m_objectsData.resize(5);
         glm::mat4 model = glm::mat4(1);
         for(size_t i =0;i<m_objectsData.size();i++){
             glm::mat4 transform = glm::translate(model, glm::vec3(1.0f* i, 1.0f* i,0.0f));
@@ -422,11 +433,10 @@ void Application::Draw()
     void Application::UpdateUniformBuffer(uint32_t currentFrame)
     {
         //Camera
-        glm::vec3 camPos = {0.f, 0.0f, -10.0f};
-        glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+  
         CameraUBO::Values cameraUboValues{};
-        cameraUboValues.proj = projection;
-        cameraUboValues.view = view;
+        cameraUboValues.proj = m_camera->projection;
+        cameraUboValues.view = m_camera->view;
         memcpy(m_cameraData.cameraUBOs[currentFrame].buffer.data, &cameraUboValues, sizeof(CameraUBO::Values));
 
         for(size_t i =0; i<m_objectsData.size();i++){
