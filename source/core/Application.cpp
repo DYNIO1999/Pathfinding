@@ -189,21 +189,16 @@ void Application::Draw()
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.bufferHandle, &offset);
         vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer.bufferHandle,0, VK_INDEX_TYPE_UINT32);
         //vkCmdDraw(commandBuffer, m_vertices.size(), 1, 0, 0);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 0, 1, &m_descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
-        PipelinePushConstantData constant;
-        for(int i=0;i<1;i++){
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 0, 1, &m_cameraData.descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
 
-        
-            //if(Input::KeyPressed(GLFW_KEY_W)){
-            constant.projection = transforms[i];
-            //}
+        for (size_t i = 0; i < m_objectsData.size(); i++)
+        {
+            PipelinePushConstantData constant;
+            constant.projection = glm::mat4(1);
+
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
-            // calculate final mesh matrix
-            //view = glm::translate(glm::mat4(1.f), camPos);
-            //model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
-            //model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
-            //glm::mat4 mesh_matrix = projection * view * model;
-            vkCmdDrawIndexed(commandBuffer,m_indices.size(),1,0,0,0);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1,&m_objectsData[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
+            vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
         }
 
         vkCmdEndRenderPass(commandBuffer);
@@ -233,10 +228,12 @@ void Application::Draw()
         m_vertices.emplace_back(Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         m_vertices.emplace_back(Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
 
-        transforms.resize(10);
-        for(int i=0;i<10;i++){
-            transforms[i] =glm::mat4(1);
-        }   
+        m_objectsData.resize(100);
+        glm::mat4 model = glm::mat4(1);
+        for(size_t i =0;i<m_objectsData.size();i++){
+            glm::mat4 transform = glm::translate(model, glm::vec3(1.0f* i, 1.0f* i,0.0f));
+            m_objectsData[i].transform =transform; 
+        }
     }
 
     void Application::CreateVertexBuffer()
@@ -383,94 +380,145 @@ void Application::Draw()
 
     void Application::CreateUniformBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(UniformBuffer::Values);
 
-        m_uniformBuffers.resize(m_swapchain->MAX_FRAMES_IN_FLIGHT);
-        
-        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++){
-        VkMemoryAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.pNext = nullptr;
-        allocInfo.allocationSize = 0;
-        allocInfo.memoryTypeIndex = 0;
 
-        VkBufferCreateInfo bufferInfo = {};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        bufferInfo.size = bufferSize;
-        m_uniformBuffers[i].allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_uniformBuffers[i].bufferHandle);
-        m_uniformBuffers[i].data = m_allocator->MapMemory(m_uniformBuffers[i].allocationHandle);
+        for(auto i = 0; i< m_swapchain->MAX_FRAMES_IN_FLIGHT;i++){
+            VkDeviceSize bufferSize = sizeof(CameraUBO::Values);
+            VkMemoryAllocateInfo allocInfo = {};
+            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            allocInfo.pNext = nullptr;
+            allocInfo.allocationSize = 0;
+            allocInfo.memoryTypeIndex = 0;
+
+            VkBufferCreateInfo bufferInfo = {};
+            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            bufferInfo.size = bufferSize;
+
+            m_cameraData.cameraUBOs[i].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_cameraData.cameraUBOs[i].buffer.bufferHandle);
+
+            m_cameraData.cameraUBOs[i].buffer.data = m_allocator->MapMemory(m_cameraData.cameraUBOs[i].buffer.allocationHandle);
+        }
+
+
+    for(size_t i =0; i<2;i++){
+        for(size_t j =0; j<m_objectsData.size();j++){
+            VkDeviceSize bufferSize = sizeof(ModelUBO::Values);
+            VkMemoryAllocateInfo allocInfo = {};
+            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            allocInfo.pNext = nullptr;
+            allocInfo.allocationSize = 0;
+            allocInfo.memoryTypeIndex = 0;
+            VkBufferCreateInfo bufferInfo = {};
+            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            bufferInfo.size = bufferSize;
+            m_objectsData[j].modelUBOs[i].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_objectsData[j].modelUBOs[i].buffer.bufferHandle);
+            m_objectsData[j].modelUBOs[i].buffer.data = m_allocator->MapMemory(m_objectsData[j].modelUBOs[i].buffer.allocationHandle);
+        }
     }
     }
+
     void Application::UpdateUniformBuffer(uint32_t currentFrame)
     {
-        UniformBuffer::Values uboValues{};
-        
-        model = glm::rotate(model, glm::radians(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
+        //Camera
+        glm::vec3 camPos = {0.f, 0.0f, -10.0f};
+        glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+        CameraUBO::Values cameraUboValues{};
+        cameraUboValues.proj = projection;
+        cameraUboValues.view = view;
+        memcpy(m_cameraData.cameraUBOs[currentFrame].buffer.data, &cameraUboValues, sizeof(CameraUBO::Values));
 
-        uboValues.model =model;
-        uboValues.proj =projection;
-        uboValues.view =view;
-
-        if (Input::KeyPressed(GLFW_KEY_D))
-        {
-            view = glm::translate(view, glm::vec3(-0.001f, 0.0, 0.0));
-            APP_ERROR("MOVING");
-        }
-
-
-        memcpy(m_uniformBuffers[currentFrame].data, &uboValues, sizeof(UniformBuffer::Values));
-       
-        for(int i=0;i<10;i++){
-            transforms[i] = glm::translate(transforms[i], glm::vec3(0.0001f, 0.0f, 0.0f));
-        }
-
-
+        for(size_t i =0; i<m_objectsData.size();i++){
+            //m_objectsData[i].modelUBOs[currentFrame].values
+            ModelUBO::Values temp;
+            temp.model = m_objectsData[i].transform;
+            memcpy(m_objectsData[i].modelUBOs[currentFrame].buffer.data, &temp, sizeof(ModelUBO::Values));
+        }   
     }
     void Application::CreateDescriptorPool()
     {
         VkDescriptorPoolSize poolSize{};
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = static_cast<uint32_t>(m_swapchain->MAX_FRAMES_IN_FLIGHT);
+        poolSize.descriptorCount = 2 + (m_objectsData.size() * 2);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
         poolInfo.pPoolSizes = &poolSize;
-        poolInfo.maxSets = static_cast<uint32_t>(m_swapchain->MAX_FRAMES_IN_FLIGHT+1);
+        poolInfo.maxSets = 2 + (m_objectsData.size()*2);
 
         VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->LogicalDeviceHandle(), &poolInfo, nullptr, &m_descriptorPool));
     }
     void Application::CreateDescriptorSets()
     {
-        std::vector<VkDescriptorSetLayout> layouts(m_swapchain->MAX_FRAMES_IN_FLIGHT, m_defaultPipelineSpec.descriptorSetLayouts[0]);
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = m_descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(m_swapchain->MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = layouts.data();
 
-        m_descriptors.resize(m_swapchain->MAX_FRAMES_IN_FLIGHT);
-        vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, m_descriptors.data());
+        std::vector<VkDescriptorSetLayout> layouts{m_defaultPipelineSpec.descriptorSetLayouts[0], m_defaultPipelineSpec.descriptorSetLayouts[1]};
 
-        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        for(size_t i = 0;i<2;i++)
         {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_uniformBuffers[i].bufferHandle;
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBuffer::Values);
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = m_descriptorPool;
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &layouts[0];
+            vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, &m_cameraData.descriptors[i]);
+        }
 
+        for (size_t i = 0; i < 2; i++){
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = m_cameraData.cameraUBOs[i].buffer.bufferHandle;
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(CameraUBO::Values);    
+            
             VkWriteDescriptorSet descriptorWrite{};
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = m_descriptors[i];
+            descriptorWrite.dstSet =  m_cameraData.descriptors[i];
             descriptorWrite.dstBinding = 0;
             descriptorWrite.dstArrayElement = 0;
             descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             descriptorWrite.descriptorCount = 1;
             descriptorWrite.pBufferInfo = &bufferInfo;
-
             vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &descriptorWrite, 0, nullptr);
+        }
+
+
+        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            for (size_t j = 0; j < m_objectsData.size(); j++)
+            {
+
+                VkDescriptorSetAllocateInfo allocInfo{};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = m_descriptorPool;
+                allocInfo.descriptorSetCount = 1;
+                allocInfo.pSetLayouts = &layouts[1];
+                vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, &m_objectsData[j].descriptors[i]);
+            }
+        }
+
+
+
+        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            for (size_t j = 0; j < m_objectsData.size(); j++)
+            {
+
+                VkDescriptorBufferInfo bufferInfo{};
+                bufferInfo.buffer = m_objectsData[j].modelUBOs[i].buffer.bufferHandle;
+                bufferInfo.offset = 0;
+                bufferInfo.range = sizeof(ModelUBO::Values);
+
+                VkWriteDescriptorSet descriptorWrite{};
+                descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWrite.dstSet = m_objectsData[j].descriptors[i];
+                descriptorWrite.dstBinding = 0;
+                descriptorWrite.dstArrayElement = 0;
+                descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                descriptorWrite.descriptorCount = 1;
+                descriptorWrite.pBufferInfo = &bufferInfo;
+                vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &descriptorWrite, 0, nullptr);
+            }
         }
     }
 }
