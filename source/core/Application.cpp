@@ -244,7 +244,7 @@ void Application::Draw()
         m_vertices.emplace_back(Vertex{glm::vec3(1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
 
                 
-        m_objectsData.resize(5);
+        m_objectsData.resize(1000);
         glm::mat4 model = glm::mat4(1);
         for(size_t i =0;i<m_objectsData.size();i++){
             glm::mat4 transform = glm::translate(model, glm::vec3(2.0f* i,0.0f,0.0f));

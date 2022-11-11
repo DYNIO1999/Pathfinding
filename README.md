@@ -31,21 +31,23 @@ Engine initialization | Boilerplate
     VertexBuffers [DONE] [NOT_GOOD_ENOUGH]
     StagingBuffer [DONE] [NOT_GOOD_ENOUGH]
     IndexBuffers [DONE] [NOT_GOOD_ENOUGH]
-    
-    Descriptors[]    
+    Descriptors[DONE] [NOT_GOOD_ENOUGH]    
+    UniformBuffer [DONE] [NOT_GOOD_ENOUGH]
+
+# DEADLINE [/12/13]
+    DepthStencil []
     Camera 3D []
-    UniformBuffer []
     Grid/Scene[]
-
-# DEADLINE [/11/12/13/14]
     ComputePipeline[]    
-    Textures [] ??
-    CubeMap [] ??
-
-# DEADLINE [15/16/17/18/19/20]
-    ComputePipeline
+# DEADLINE [/14]
+    Abstraction/Encapsulation/Refactoring
+# DEADLINE [/15/16/17/18/19/20]
     Pathfinding GPU
     Pathfinding CPU side?
+    
+    Textures [] ??
+    CubeMap [] ??
+    ComputePipeline
     Abstraction/Encapsulation?
 
 # DEADLINE []
