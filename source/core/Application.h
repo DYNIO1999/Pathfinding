@@ -123,17 +123,17 @@ private:
     VulkanBuffer m_vertexBuffer{};
     VulkanBuffer m_indexBuffer{};
     std::vector<Vertex> m_vertices;
-    std::vector<u_int32_t> m_indices{0, 1, 2, // Side 0
+    std::vector<u_int32_t> m_indices{0, 1, 2, 
                                      2, 1, 3,
-                                     4, 0, 6, // Side 1
+                                     4, 0, 6, 
                                      6, 0, 2,
-                                     7, 5, 6, // Side 2
+                                     7, 5, 6, 
                                      6, 5, 4,
-                                     3, 1, 7, // Side 3
+                                     3, 1, 7, 
                                      7, 1, 5,
-                                     4, 5, 0, // Side 4
+                                     4, 5, 0, 
                                      0, 5, 1,
-                                     3, 7, 2, // Side 5
+                                     3, 7, 2, 
                                      2, 7, 6};
 
     std::unique_ptr<Camera> m_camera;

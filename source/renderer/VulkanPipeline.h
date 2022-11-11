@@ -47,7 +47,7 @@ namespace Pathfinding{
     };
 
     struct PipelinePushConstantData{
-        alignas(16)glm::mat4 projection;
+        alignas(16)glm::vec4 color;
     };
 
     struct PipelineSpecification

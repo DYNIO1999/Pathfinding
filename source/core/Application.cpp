@@ -79,7 +79,7 @@ namespace Pathfinding
 
         m_defaultPipelineSpec = VulkanPipeline::DefaultPipelineSpecification(m_swapchain->RenderPassHandle());
         m_defaultPipelineSpec.vertexInputDescription = VertexInputDescription::GetVertexDescription();
-        m_defaultPipelineSpec.pushConstantData = std::make_unique<PipelinePushConstantData>(PipelinePushConstantData{glm::mat4(1.0f)});
+        m_defaultPipelineSpec.pushConstantData = std::make_unique<PipelinePushConstantData>(PipelinePushConstantData{glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         m_defaultPipelineSpec.AddDescriptorSetLayout(*m_device);
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
 
@@ -197,10 +197,15 @@ void Application::Draw()
 
         for (size_t i = 0; i < m_objectsData.size(); i++)
         {
+            
             PipelinePushConstantData constant;
-            constant.projection = glm::mat4(1);
-
-            vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PipelinePushConstantData), &constant);
+            if(i%2==0){
+            constant.color = glm::vec4(0.5,1.0f,0.7f,1.0f);
+            }else{
+                constant.color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+            }
+            
+            vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &constant);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1,&m_objectsData[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
         }
@@ -242,7 +247,7 @@ void Application::Draw()
         m_objectsData.resize(5);
         glm::mat4 model = glm::mat4(1);
         for(size_t i =0;i<m_objectsData.size();i++){
-            glm::mat4 transform = glm::translate(model, glm::vec3(1.0f* i, 1.0f* i,0.0f));
+            glm::mat4 transform = glm::translate(model, glm::vec3(2.0f* i,0.0f,0.0f));
             m_objectsData[i].transform =transform; 
         }
     }
