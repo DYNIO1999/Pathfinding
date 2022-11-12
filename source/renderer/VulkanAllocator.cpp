@@ -25,25 +25,38 @@ namespace Pathfinding
 
     VulkanAllocator::~VulkanAllocator()
     {
+
+        uint32_t heapIndex = 0;
+
+        VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+        vmaGetHeapBudgets(m_allocatorHandle, budgets);
+
+        printf("My heap currently has %u allocations taking %llu B,\n",
+               budgets[heapIndex].statistics.allocationCount,
+               budgets[heapIndex].statistics.allocationBytes);
+        printf("allocated out of %u Vulkan device memory blocks taking %llu B,\n",
+               budgets[heapIndex].statistics.blockCount,
+               budgets[heapIndex].statistics.blockBytes);
+        printf("Vulkan reports total usage %llu B with budget %llu B.\n",
+               budgets[heapIndex].usage,
+               budgets[heapIndex].budget);
+        
         vmaDestroyAllocator(m_allocatorHandle);
     }
 
-    VmaAllocation VulkanAllocator::AllocateBuffer(VkBufferCreateInfo *create_info, VmaMemoryUsage usage, VkBuffer *buffer)
+    VmaAllocation VulkanAllocator::AllocateBuffer(VkBufferCreateInfo *createInfo, VmaMemoryUsage usage, VkBuffer *outBuffer)
     {
         VmaAllocationCreateInfo allocationCreateInfo = {};
         allocationCreateInfo.usage = usage;
 
         VmaAllocation allocation;
         VmaAllocationInfo allocationInfo;
-        VK_CHECK_RESULT(vmaCreateBuffer(m_allocatorHandle, create_info, &allocationCreateInfo, buffer, &allocation, &allocationInfo));
+        VK_CHECK_RESULT(vmaCreateBuffer(m_allocatorHandle, createInfo, &allocationCreateInfo, outBuffer, &allocation, &allocationInfo));
         return allocation;
     }
 
     void VulkanAllocator::DestroyBuffer(VkBuffer buffer, VmaAllocation allocation)
     {
-        VmaAllocationInfo allocationInfo;
-        vmaGetAllocationInfo(m_allocatorHandle, allocation, &allocationInfo);
-        vkDeviceWaitIdle(m_deviceRef.LogicalDeviceHandle());
         vmaDestroyBuffer(m_allocatorHandle, buffer, allocation);
     }
 
@@ -58,5 +71,20 @@ namespace Pathfinding
     void VulkanAllocator::UnmapMemory(VmaAllocation allocation)
     {
         vmaUnmapMemory(m_allocatorHandle, allocation);
+    }
+
+    VmaAllocation VulkanAllocator::AllocateImage(VkImageCreateInfo *createInfo, VmaMemoryUsage usage, VkImage *outImage)
+    {
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = usage;
+
+        VmaAllocation allocation;
+        VK_CHECK_RESULT(vmaCreateImage(m_allocatorHandle, createInfo, &allocCreateInfo, outImage, &allocation, nullptr));
+
+        return allocation;
+    }
+    void VulkanAllocator::DestroyImage(VkImage image, VmaAllocation allocation)
+    {
+        vmaDestroyImage(m_allocatorHandle, image, allocation);
     }
 } 

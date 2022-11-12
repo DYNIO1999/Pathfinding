@@ -14,14 +14,16 @@ namespace Pathfinding
 
         VmaAllocator AllocatorHandle() { return m_allocatorHandle;}
 
-        VmaAllocation AllocateBuffer(VkBufferCreateInfo *create_info, VmaMemoryUsage usage, VkBuffer *buffer);
+        VmaAllocation AllocateBuffer(VkBufferCreateInfo *createInfo, VmaMemoryUsage usage, VkBuffer *outBuffer);
         void DestroyBuffer(VkBuffer buffer, VmaAllocation allocation);
 
         void *MapMemory(VmaAllocation allocation);
         void UnmapMemory(VmaAllocation allocation);
 
-    private:
-        VulkanDevice& m_deviceRef;
+        VmaAllocation AllocateImage(VkImageCreateInfo* createInfo, VmaMemoryUsage usage, VkImage *outImage);
+        void DestroyImage(VkImage image, VmaAllocation allocation);
+    private: 
+        VulkanDevice &m_deviceRef;
         VmaAllocator m_allocatorHandle;
     };
 }

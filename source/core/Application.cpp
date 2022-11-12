@@ -12,6 +12,7 @@ namespace Pathfinding
     }
     Application::~Application()
     {
+
     }
 
     void Application::Run()
@@ -75,7 +76,7 @@ namespace Pathfinding
         m_device = std::make_unique<VulkanDevice>();
         m_allocator = std::make_unique<VulkanAllocator>(*m_device);
 
-        m_swapchain = std::make_unique<VulkanSwapChain>(*m_device);
+        m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, *m_allocator);
 
         m_defaultPipelineSpec = VulkanPipeline::DefaultPipelineSpecification(m_swapchain->RenderPassHandle());
         m_defaultPipelineSpec.vertexInputDescription = VertexInputDescription::GetVertexDescription();
@@ -88,9 +89,26 @@ namespace Pathfinding
         m_camera = std::make_unique<Camera>(1600.0f,900.0f);
     }
     void Application::Shutdown()
-    {
-        m_allocator->DestroyBuffer(m_vertexBuffer.bufferHandle, m_vertexBuffer.allocationHandle);
+    {     
         vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
+
+        m_allocator->DestroyBuffer(m_vertexBuffer.bufferHandle, m_vertexBuffer.allocationHandle);
+        m_allocator->DestroyBuffer(m_indexBuffer.bufferHandle, m_indexBuffer.allocationHandle);
+
+        for (int i = 0; i < 2; i++)
+        {
+            m_allocator->UnmapMemory(m_cameraData.cameraUBOs[i].buffer.allocationHandle);
+            m_allocator->DestroyBuffer(m_cameraData.cameraUBOs[i].buffer.bufferHandle, m_cameraData.cameraUBOs[i].buffer.allocationHandle);
+        }
+
+        for (size_t i = 0; i < 2; i++)
+        {
+            for (size_t j = 0; j < m_objectsData.size(); j++)
+            {
+                m_allocator->UnmapMemory(m_objectsData[j].modelUBOs[i].buffer.allocationHandle);
+                m_allocator->DestroyBuffer(m_objectsData[j].modelUBOs[i].buffer.bufferHandle, m_objectsData[j].modelUBOs[i].buffer.allocationHandle);
+            }
+        }
     }
 
     void Application::CreateCommandBuffers()
@@ -119,12 +137,12 @@ void Application::Draw()
 
             if (m_swapchain == nullptr)
             {
-                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device);
+                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, *m_allocator);
             }
             else
             {
                 std::shared_ptr<VulkanSwapChain> oldSwapChain = std::move(m_swapchain);
-                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, oldSwapChain);
+                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, *m_allocator, oldSwapChain);
             }
         }
 
@@ -147,19 +165,13 @@ void Application::Draw()
 
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = m_swapchain->Extent();
-        VkClearValue clearColor;
+    
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {{0.025f, 0.025f, 0.025f, 1.0f}};
+        clearValues[1].depthStencil = {1.0f, 0};
 
-        //if (Input::KeyPressed(GLFW_KEY_W))
-        //{
-        //    clearColor = {{{0.025f, 0.5f, 0.025f, 1.0f}}};
-        //}
-        //else
-        //{
-        clearColor = {{{0.025f, 0.025f, 0.025f, 1.0f}}};
-        //}
-
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
 
         // Begin Render Pass
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -220,12 +232,12 @@ void Application::Draw()
             vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
             if (m_swapchain == nullptr)
             {
-                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device);
+                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, *m_allocator);
             }
             else
             {
                 std::shared_ptr<VulkanSwapChain> oldSwapChain = std::move(m_swapchain);
-                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, oldSwapChain);
+                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, *m_allocator,oldSwapChain);
             }
         }
     }
@@ -329,7 +341,7 @@ void Application::Draw()
         VkBufferCreateInfo bufferCreateInfo1 = VulkanInitializers::BufferCreateInfo(
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE,
             sizeof(m_indices[0]) * m_indices.size());
-        m_vertexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_indexBuffer.bufferHandle);
+        m_indexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_indexBuffer.bufferHandle);
 
         VkBufferCreateInfo bufferCreateInfo{};
 

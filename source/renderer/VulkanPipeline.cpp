@@ -103,8 +103,6 @@ namespace Pathfinding
         if(!pipelineSpecification.descriptorSetLayouts.empty()){
             pipelineLayoutInfo.pSetLayouts = pipelineSpecification.descriptorSetLayouts.data();
             pipelineLayoutInfo.setLayoutCount = pipelineSpecification.descriptorSetLayouts.size();
-        }else{
-            APP_ERROR("HEHEH CHECK!");
         }
 
         if (vkCreatePipelineLayout(m_deviceRef.LogicalDeviceHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayoutHandle))
@@ -175,38 +173,63 @@ namespace Pathfinding
         pipelineSpecification.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         pipelineSpecification.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-       
         pipelineSpecification.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         pipelineSpecification.viewportInfo.viewportCount = 1;
+        pipelineSpecification.viewportInfo.pViewports = nullptr;
         pipelineSpecification.viewportInfo.scissorCount = 1;
+        pipelineSpecification.viewportInfo.pScissors = nullptr;
 
         pipelineSpecification.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         pipelineSpecification.rasterizationInfo.depthClampEnable = VK_FALSE;
         pipelineSpecification.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
         pipelineSpecification.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
         pipelineSpecification.rasterizationInfo.lineWidth = 1.0f;
-        pipelineSpecification.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+        pipelineSpecification.rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
         pipelineSpecification.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
         pipelineSpecification.rasterizationInfo.depthBiasEnable = VK_FALSE;
+        pipelineSpecification.rasterizationInfo.depthBiasConstantFactor = 0.0f; 
+        pipelineSpecification.rasterizationInfo.depthBiasClamp = 0.0f;          
+        pipelineSpecification.rasterizationInfo.depthBiasSlopeFactor = 0.0f;
 
-      
         pipelineSpecification.multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         pipelineSpecification.multisampleInfo.sampleShadingEnable = VK_FALSE;
         pipelineSpecification.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        pipelineSpecification.multisampleInfo.minSampleShading = 1.0f;          
+        pipelineSpecification.multisampleInfo.pSampleMask = nullptr;            
+        pipelineSpecification.multisampleInfo.alphaToCoverageEnable = VK_FALSE; 
+        pipelineSpecification.multisampleInfo.alphaToOneEnable = VK_FALSE;
 
-        pipelineSpecification.colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        pipelineSpecification.colorBlendAttachment.colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+            VK_COLOR_COMPONENT_A_BIT;
         pipelineSpecification.colorBlendAttachment.blendEnable = VK_FALSE;
+        pipelineSpecification.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;  
+        pipelineSpecification.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
+        pipelineSpecification.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;             
+        pipelineSpecification.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; 
+        pipelineSpecification.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; 
+        pipelineSpecification.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;             
 
-        
         pipelineSpecification.colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         pipelineSpecification.colorBlendInfo.logicOpEnable = VK_FALSE;
-        pipelineSpecification.colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
+        pipelineSpecification.colorBlendInfo.logicOp = VK_LOGIC_OP_COPY; 
         pipelineSpecification.colorBlendInfo.attachmentCount = 1;
         pipelineSpecification.colorBlendInfo.pAttachments = &pipelineSpecification.colorBlendAttachment;
-        pipelineSpecification.colorBlendInfo.blendConstants[0] = 0.0f;
-        pipelineSpecification.colorBlendInfo.blendConstants[1] = 0.0f;
-        pipelineSpecification.colorBlendInfo.blendConstants[2] = 0.0f;
+        pipelineSpecification.colorBlendInfo.blendConstants[0] = 0.0f; 
+        pipelineSpecification.colorBlendInfo.blendConstants[1] = 0.0f; 
+        pipelineSpecification.colorBlendInfo.blendConstants[2] = 0.0f; 
         pipelineSpecification.colorBlendInfo.blendConstants[3] = 0.0f;
+
+        pipelineSpecification.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        pipelineSpecification.depthStencilInfo.depthTestEnable = VK_TRUE;
+        pipelineSpecification.depthStencilInfo.depthWriteEnable = VK_TRUE;
+        pipelineSpecification.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+        pipelineSpecification.depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+        pipelineSpecification.depthStencilInfo.minDepthBounds = 0.0f; 
+        pipelineSpecification.depthStencilInfo.maxDepthBounds = 1.0f; 
+        pipelineSpecification.depthStencilInfo.stencilTestEnable = VK_FALSE;
+        pipelineSpecification.depthStencilInfo.front = {}; 
+        pipelineSpecification.depthStencilInfo.back = {};  
 
         pipelineSpecification.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
         pipelineSpecification.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;

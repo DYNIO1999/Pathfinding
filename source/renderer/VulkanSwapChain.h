@@ -1,16 +1,16 @@
 #ifndef _RENDERER_VULKAN_SWAP_CHAIN_H_
 #define _RENDERER_VULKAN_SWAP_CHAIN_H_
 
-
+#include "VulkanAllocator.h"
 #include "VulkanDevice.h"
 
 namespace Pathfinding{
 class VulkanSwapChain
 {
 public:
-    VulkanSwapChain(VulkanDevice &deviceRef);
-    VulkanSwapChain(VulkanDevice &deviceRef, std::shared_ptr<VulkanSwapChain> previous);
-    
+    VulkanSwapChain(VulkanDevice &deviceRef, VulkanAllocator& allocatorRef);
+    VulkanSwapChain(VulkanDevice &deviceRef, VulkanAllocator& allocatorRef, std::shared_ptr<VulkanSwapChain> previous);
+
     ~VulkanSwapChain();
 
     VulkanSwapChain(const VulkanSwapChain &) = delete;
@@ -43,17 +43,19 @@ private:
 
     void CreateSwapChain();
     void CreateImageViews();
-
+    void CreateDepthBuffer();
     void CreateRenderPass();
+
     void CreateFramebuffers();
     void CreateSyncObjects();
 
+    VkFormat FindDepthFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     VkSwapchainKHR m_swapChain;
     std::shared_ptr<VulkanSwapChain> m_oldSwapChain;
 
     VkFormat m_swapChainImageFormat;
-
+   
     std::vector<VkImage> m_swapChainImages;
     std::vector<VkImageView> m_swapChainImageViews;
 
@@ -63,6 +65,17 @@ private:
     std::vector<VkFence> m_inFlightFences;
     std::vector<VkFence> m_imagesInFlight;
     VulkanDevice& m_deviceRef;
+    
+    
+    VulkanAllocator& m_vulkanAllocatorRef;
+    //Depth
+    std::vector<VkImage> m_depthImages;
+    std::vector<VmaAllocation> m_depthImageAllocations;
+    std::vector<VkImageView> m_depthImageViews;
+    
+    VkFormat m_swapChainDepthFormat;
+    
+
 };
 }
 #endif
