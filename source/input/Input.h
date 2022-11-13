@@ -14,7 +14,7 @@ public:
     static bool MouseButtonPressed(int button);
     static bool KeyPressed(int key);
 
-private:
+    private:
 };
 }
 #endif

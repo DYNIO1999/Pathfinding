@@ -85,8 +85,9 @@ namespace Pathfinding
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
 
 
+        auto [width,height ] = Application::GetWindow()->WindowSize();
+        m_camera = std::make_unique<Camera>(static_cast<float>(width), static_cast<float>(height));
 
-        m_camera = std::make_unique<Camera>(1600.0f,900.0f);
     }
     void Application::Shutdown()
     {     
@@ -452,8 +453,8 @@ void Application::Draw()
         //Camera
   
         CameraUBO::Values cameraUboValues{};
-        cameraUboValues.proj = m_camera->projection;
-        cameraUboValues.view = m_camera->view;
+        cameraUboValues.proj = m_camera->Projection();
+        cameraUboValues.view = m_camera->View();
         memcpy(m_cameraData.cameraUBOs[currentFrame].buffer.data, &cameraUboValues, sizeof(CameraUBO::Values));
 
         for(size_t i =0; i<m_objectsData.size();i++){

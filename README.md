@@ -33,14 +33,14 @@ Engine initialization | Boilerplate
     IndexBuffers [DONE] [NOT_GOOD_ENOUGH]
     Descriptors[DONE] [NOT_GOOD_ENOUGH]    
     UniformBuffer [DONE] [NOT_GOOD_ENOUGH]
-
-# DEADLINE [/12/13]
-    DepthStencil []
+    DepthStencil [DONE]
+# DEADLINE [13]
     Camera 3D []
-    Grid/Scene[]
-    ComputePipeline[]    
 # DEADLINE [/14]
+    Grid/Scene[]
+    ComputePipeline[]
     Abstraction/Encapsulation/Refactoring
+    
 # DEADLINE [/15/16/17/18/19/20]
     Pathfinding GPU
     Pathfinding CPU side?
