@@ -128,11 +128,10 @@ public:
     
     VkPipelineLayout PipelineLayoutHandle(){return m_pipelineLayoutHandle;}
     static PipelineSpecification DefaultPipelineSpecification(VkRenderPass renderPass);
-
+    static std::vector<char> ReadShaderFile(const std::string &path);
 private:
     
 
-    static std::vector<char> ReadShaderFile(const std::string &path);
 
     void CreateGraphicsPipeline(
         const std::string &vertFilepath,
@@ -147,6 +146,7 @@ private:
 
     VkPipelineLayout m_pipelineLayoutHandle{VK_NULL_HANDLE};
     VkPipeline m_pipelineHandle{VK_NULL_HANDLE};
+
 };
 }
 #endif

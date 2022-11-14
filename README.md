@@ -11,7 +11,7 @@ Create Window [DONE]
     - Callbacks
 Input [DONE]
 
-# DEADLINE [/8/9/10]
+# DEADLINE []
 Engine initialization | Boilerplate
     Create Instance [DONE]
      -  enable validation layers
@@ -35,11 +35,10 @@ Engine initialization | Boilerplate
     IndexBuffers [DONE] [NOT_GOOD_ENOUGH]
     Descriptors[DONE] [NOT_GOOD_ENOUGH]    
     UniformBuffer [DONE] [NOT_GOOD_ENOUGH]
+    KeyCallbacks or Key State recording to handle single key pressing [DONE]
 # DEADLINE [/14]
-    KeyCallbacks or Key State recording to handle single key pressing [] 
-    Grid/Scene []
     ComputePipeline[]
-
+    Grid/Scene []
     Abstraction/Encapsulation/Refactoring
     
 # DEADLINE [/15/16/17/18/19/20]

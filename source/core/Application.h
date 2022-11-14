@@ -34,6 +34,12 @@ struct VulkanBuffer{
     void* data; 
 };
 
+struct ShaderStorageBufferObject{
+    VulkanBuffer buffer;
+    std::vector<int> data;
+    VkDescriptorSet descriptor;
+};
+
 struct CameraUBO{
     VulkanBuffer buffer;
     struct Values
@@ -113,8 +119,7 @@ private:
     void CreateIndexBuffer();
     void CreateDescriptorPool();
     void CreateDescriptorSets();
-   
-
+    
 
     glm::mat4 projection = glm::perspective(glm::radians(70.f), 1600.f / 900.f, 0.1f, 200.0f);
     glm::mat4 model = glm::mat4(1);
@@ -137,6 +142,24 @@ private:
                                      2, 7, 6};
 
     std::unique_ptr<Camera> m_camera;
+
+
+    //compute Testing
+
+    void CreateComputePipelineLayout();
+    void CreateComputePipeline(const std::string& shaderPath);
+    void CreateComputeStorageBuffers();
+    void CreateComputeDescriptorPool();
+
+    void CreateComputeCommandPool();
+    void BuildComputeCommands();
+    void CalculateCompute();
+    VkCommandBuffer m_computeCommandBuffer;
+    std::vector<VkDescriptorSetLayout> m_computeSetLayouts;
+    VkPipelineLayout m_pipelineLayoutCompute;
+    VkPipeline m_computePipeline{VK_NULL_HANDLE};
+    VkDescriptorPool m_descriptorPoolCompute;
+    ShaderStorageBufferObject m_ssbObjects[2];
 };
 }
 #endif

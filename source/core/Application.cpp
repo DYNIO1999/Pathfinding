@@ -28,7 +28,15 @@ namespace Pathfinding
         CreateDescriptorPool();
         CreateDescriptorSets();
 
+        CreateComputePipelineLayout();
+        CreateComputePipeline("../shaders/test.comp.spv");
+        CreateComputeStorageBuffers();
+        CreateComputeDescriptorPool();
 
+        CreateComputeCommandPool();
+        BuildComputeCommands();
+
+        CalculateCompute();
         // Init Vulkan
         while (m_window->IsOpen())
         {
@@ -49,6 +57,7 @@ namespace Pathfinding
          
             m_camera->Update(m_deltaTime.AsSeconds());
             UpdateUniformBuffer(m_swapchain->CurrentFrame());
+
             Draw();
             m_window->ProcessEvents(); // process events/inputs
 
@@ -110,6 +119,12 @@ namespace Pathfinding
                 m_allocator->DestroyBuffer(m_objectsData[j].modelUBOs[i].buffer.bufferHandle, m_objectsData[j].modelUBOs[i].buffer.allocationHandle);
             }
         }
+
+        for(auto it: m_defaultPipelineSpec.descriptorSetLayouts){
+            vkDestroyDescriptorSetLayout(m_device->LogicalDeviceHandle(), it, nullptr);
+        }
+
+        vkDestroyDescriptorPool(m_device->LogicalDeviceHandle(),m_descriptorPool,nullptr);
     }
 
     void Application::CreateCommandBuffers()
@@ -548,5 +563,204 @@ void Application::Draw()
                 vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &descriptorWrite, 0, nullptr);
             }
         }
+    }
+
+    void Application::CreateComputePipelineLayout(){
+
+        {
+            VkDescriptorSetLayout descriptorSetLayout;
+            VkDescriptorSetLayoutBinding layoutBindings;
+            layoutBindings.binding = 0;
+            layoutBindings.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            layoutBindings.descriptorCount = 1;
+            layoutBindings.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+            VkDescriptorSetLayoutCreateInfo layoutInfo{};
+            layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutInfo.bindingCount = 1;
+            layoutInfo.pBindings = &layoutBindings;
+
+            VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_device->LogicalDeviceHandle(), &layoutInfo, nullptr, &descriptorSetLayout));
+
+            m_computeSetLayouts.emplace_back(descriptorSetLayout);
+        }
+
+        {
+            VkDescriptorSetLayout descriptorSetLayout;
+            VkDescriptorSetLayoutBinding layoutBindings;
+            layoutBindings.binding = 0;
+            layoutBindings.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            layoutBindings.descriptorCount = 1;
+            layoutBindings.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+            VkDescriptorSetLayoutCreateInfo layoutInfo{};
+            layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutInfo.bindingCount = 1;
+            layoutInfo.pBindings = &layoutBindings;
+
+            VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_device->LogicalDeviceHandle(), &layoutInfo, nullptr, &descriptorSetLayout));
+
+            m_computeSetLayouts.emplace_back(descriptorSetLayout);
+        }
+
+        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+        pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutCreateInfo.setLayoutCount = m_computeSetLayouts.size();
+        pipelineLayoutCreateInfo.pSetLayouts = m_computeSetLayouts.data();
+
+        VK_CHECK_RESULT(vkCreatePipelineLayout(m_device->LogicalDeviceHandle(), &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayoutCompute));
+    }
+
+    void Application::CreateComputePipeline(const std::string &shaderPath)
+    {
+        VkShaderModuleCreateInfo shaderModuleCreateInfo{};
+        shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+
+        auto shaderCode = VulkanPipeline::ReadShaderFile(shaderPath);
+        shaderModuleCreateInfo.pCode = reinterpret_cast<uint32_t *>(shaderCode.data());
+        shaderModuleCreateInfo.codeSize = shaderCode.size();
+
+        VkShaderModule shaderModule = VK_NULL_HANDLE;
+        VK_CHECK_RESULT(vkCreateShaderModule(m_device->LogicalDeviceHandle(), &shaderModuleCreateInfo, nullptr, &shaderModule));
+      
+
+        VkComputePipelineCreateInfo pipelineCreateInfo{};
+        pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO; 
+        pipelineCreateInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        pipelineCreateInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT; 
+        pipelineCreateInfo.stage.module = shaderModule;
+
+        pipelineCreateInfo.stage.pName = "main";
+        pipelineCreateInfo.layout = m_pipelineLayoutCompute;
+
+        VK_CHECK_RESULT(vkCreateComputePipelines(m_device->LogicalDeviceHandle(), VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_computePipeline));
+        
+        vkDestroyShaderModule(m_device->LogicalDeviceHandle(), shaderModule, nullptr);
+    }
+
+    void Application::CreateComputeStorageBuffers(){
+        VkDeviceSize bufferSize = sizeof(int) *10;
+        
+        
+        VkMemoryAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.pNext = nullptr;
+        allocInfo.allocationSize = 0;
+        allocInfo.memoryTypeIndex = 0;
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        bufferInfo.size = bufferSize;
+
+        m_ssbObjects[0].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_ssbObjects[0].buffer.bufferHandle);
+        m_ssbObjects[0].buffer.data = m_allocator->MapMemory(m_ssbObjects[0].buffer.allocationHandle);
+
+        m_ssbObjects[1].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_ssbObjects[1].buffer.bufferHandle);
+        m_ssbObjects[1].buffer.data = m_allocator->MapMemory(m_ssbObjects[1].buffer.allocationHandle);
+    }
+
+    void Application::CreateComputeDescriptorPool(){
+        VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
+        descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        descriptorPoolCreateInfo.maxSets = 2;
+
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        poolSize.descriptorCount = static_cast<uint32_t>(1);
+
+        descriptorPoolCreateInfo.poolSizeCount = 1;
+        descriptorPoolCreateInfo.pPoolSizes = &poolSize;
+        VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->LogicalDeviceHandle(), &descriptorPoolCreateInfo, nullptr, &m_descriptorPoolCompute));
+
+        VkDescriptorSetAllocateInfo descriptorSetAllocateInfo{};
+        descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        descriptorSetAllocateInfo.descriptorPool = m_descriptorPoolCompute;
+        descriptorSetAllocateInfo.descriptorSetCount = 1;
+        descriptorSetAllocateInfo.pSetLayouts = m_computeSetLayouts.data();
+
+        for(int i=0;i<2;i++){
+             VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &descriptorSetAllocateInfo, &m_ssbObjects[i].descriptor));
+
+             VkDescriptorBufferInfo bufferInfo{};
+             bufferInfo.buffer = m_ssbObjects[i].buffer.bufferHandle;
+             bufferInfo.offset = 0;
+             bufferInfo.range = VK_WHOLE_SIZE;
+
+             VkWriteDescriptorSet writeDescriptorSet{};
+             writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+             writeDescriptorSet.dstSet = m_ssbObjects[i].descriptor;
+             writeDescriptorSet.dstBinding = 0;
+             writeDescriptorSet.dstArrayElement = 0;
+             writeDescriptorSet.descriptorCount = 1;
+             writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+             writeDescriptorSet.pBufferInfo = &bufferInfo;
+
+             vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &writeDescriptorSet, 0, nullptr);
+        }
+    }
+    void Application::CreateComputeCommandPool(){
+
+        VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
+        commandBufferAllocateInfo.sType =
+            VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        commandBufferAllocateInfo.commandPool = m_device->CommandPoolHandle();
+        commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        commandBufferAllocateInfo.commandBufferCount = 1;
+
+        VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device->LogicalDeviceHandle(), &commandBufferAllocateInfo, &m_computeCommandBuffer));
+    }
+
+    void Application::BuildComputeCommands(){
+        // Compute command buffer
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        vkBeginCommandBuffer(m_computeCommandBuffer, &beginInfo);
+        vkCmdBindPipeline(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipeline);
+        vkCmdBindDescriptorSets(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayoutCompute, 0, 1, &m_ssbObjects[0].descriptor, 0, nullptr);
+        vkCmdBindDescriptorSets(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayoutCompute, 1, 1, &m_ssbObjects[1].descriptor, 0, nullptr);
+        vkCmdDispatch(m_computeCommandBuffer, 10, 1, 1);                                                                                          
+        if (vkEndCommandBuffer(m_computeCommandBuffer) != VK_SUCCESS)                                                                              
+        {
+            APP_ERROR("failed to end command buffer");
+        }
+
+        
+        std::vector<int> temp;
+        temp.resize(10);
+        int index =1;
+        for(auto& it: temp){
+            it= index++;
+        }
+        memcpy(m_ssbObjects[0].buffer.data, temp.data(), sizeof(int) * 10);
+
+        for(auto& it: temp){
+            it =0;
+        }
+        memcpy(m_ssbObjects[1].buffer.data, temp.data(), sizeof(int) * 10);
+    }
+
+    void Application::CalculateCompute(){
+        {
+        Timer time(true);
+        VkSubmitInfo submitInfo2 = {};
+        submitInfo2.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo2.commandBufferCount = 1;
+        submitInfo2.pCommandBuffers = &m_computeCommandBuffer;
+
+        vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo2, VK_NULL_HANDLE); 
+        vkQueueWaitIdle(m_device->GraphicsQueueHandle());
+        }
+        int* it =(int*)m_ssbObjects[0].buffer.data;
+        for(int i=0;i<10;i++){
+            APP_ERROR("{} ", *it);
+            it= it+1;
+        }
+        APP_ERROR("-----------RESULT-------------");
+        int* it2 =(int*)m_ssbObjects[1].buffer.data;
+        for(int i=0;i<10;i++){
+            APP_WARN("{} ", *it2);
+            it2 = it2 + 1;
+        }
+        
     }
 }
