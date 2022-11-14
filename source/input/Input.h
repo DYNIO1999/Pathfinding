@@ -9,12 +9,11 @@ namespace Pathfinding{
 class Input
 {
 public:
-    
+    static int s_oldKeyStatus;
     static std::pair<int,int> MousePosition();
     static bool MouseButtonPressed(int button);
     static bool KeyPressed(int key);
-
-    private:
+    static bool KeyPressedOnce(int key);
 };
 }
 #endif

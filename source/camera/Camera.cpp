@@ -49,6 +49,11 @@ namespace Pathfinding
       rotX = rotX *mouseSensitivity;
       rotY = rotY * mouseSensitivity;
 
+     auto result = Input::KeyPressedOnce(GLFW_KEY_ESCAPE);
+     if(result){
+        state = !state;
+     }
+    if(!state){
       glm::vec3 newOrientation = glm::rotate(m_front, glm::radians((rotY)), glm::normalize(glm::cross(m_front, m_up)));
       if (std::abs(glm::angle(newOrientation, m_up) - glm::radians(90.0f)) <= glm::radians(85.0f))
       {
@@ -58,7 +63,7 @@ namespace Pathfinding
 
       UpdateCamera();
       glfwSetCursorPos(Application::GetWindow()->GetWindowHandle(), (static_cast<float>(width / 2.0f)), (static_cast<float>(height / 2.0f)));
-    
+    }
   }
 
   void Camera::UpdateCamera(){

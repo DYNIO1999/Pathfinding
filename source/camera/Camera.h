@@ -52,6 +52,7 @@ namespace Pathfinding{
         glm::vec3 m_worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
         glm::mat4 m_projection;
         
+        bool state{false};
 };
 }
 #endif

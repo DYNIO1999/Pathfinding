@@ -22,4 +22,16 @@ namespace Pathfinding
         int status = glfwGetKey(window->GetWindowHandle(), key);
         return status == GLFW_PRESS || status == GLFW_REPEAT;
     }
+    int Input::s_oldKeyStatus = GLFW_RELEASE;
+
+    bool Input::KeyPressedOnce(int key){
+        bool state =false;
+        auto window = Application::GetWindow();
+        int status = glfwGetKey(window->GetWindowHandle(), key);
+        if( status== GLFW_RELEASE && s_oldKeyStatus ==GLFW_PRESS){
+            state = true;
+        }
+        s_oldKeyStatus = status;
+        return state;
+    }
 }
