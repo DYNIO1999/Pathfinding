@@ -28,17 +28,18 @@ Engine initialization | Boilerplate
     Drawing Triangle [DONE]
     Code Refactoring [DONE]
     Push Constant Buffer [DONE]
+    DepthStencil [DONE]
+    Camera 3D [DONE] [NOT_GOOD_ENOUGH]
     VertexBuffers [DONE] [NOT_GOOD_ENOUGH]
     StagingBuffer [DONE] [NOT_GOOD_ENOUGH]
     IndexBuffers [DONE] [NOT_GOOD_ENOUGH]
     Descriptors[DONE] [NOT_GOOD_ENOUGH]    
     UniformBuffer [DONE] [NOT_GOOD_ENOUGH]
-    DepthStencil [DONE]
-# DEADLINE [13]
-    Camera 3D []
 # DEADLINE [/14]
-    Grid/Scene[]
+    KeyCallbacks or Key State recording to handle single key pressing [] 
+    Grid/Scene []
     ComputePipeline[]
+
     Abstraction/Encapsulation/Refactoring
     
 # DEADLINE [/15/16/17/18/19/20]
