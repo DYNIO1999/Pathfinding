@@ -25,6 +25,9 @@
 
 namespace Pathfinding{
 
+constexpr size_t GRID_ROW =5;
+constexpr size_t GRID_COLUMN =5;
+constexpr size_t GRID_SIZE =GRID_ROW*GRID_COLUMN;
 
 struct VulkanBufferTest{
     VkBuffer bufferHandle = VK_NULL_HANDLE;
@@ -53,12 +56,36 @@ struct GlobalCameraData{
     std::unique_ptr<VulkanBuffer> cameraUBOs[2]; //cause 2 frames in flight
 };
 
-
-
 struct ModelData{
-    glm::mat4 transform;
+    glm::mat4 transform; //To uniform buffer
+
+    bool isPassable{true};
+    int index;
+    glm::vec3 position{0.0f,0.0f,0.0f};
+    glm::vec4 color{0.47, 0.47, 0.48, 1.0};
     VkDescriptorSet descriptors[2];
     std::unique_ptr<VulkanBuffer> modelUBOs[2]; // cause 2 frames in flight
+};
+
+struct AgentGraphicData{
+    glm::mat4 transform; //To uniform buffer
+
+    glm::vec3 position{0.0f, 0.0f, 0.0f};
+    glm::vec4 color;
+
+    VkDescriptorSet descriptors[2];
+    std::unique_ptr<VulkanBuffer> modelUBOs[2];
+};
+
+
+struct ObstacleGraphicData{
+    glm::mat4 transform; //To uniform buffer
+
+    glm::vec3 position{0.0f, 0.0f, 0.0f};
+    glm::vec4 color{0.0, 0.0, 0.0, 1.0};
+
+    VkDescriptorSet descriptors[2];
+    std::unique_ptr<VulkanBuffer> modelUBOs[2];
 };
 
 class Application
@@ -90,7 +117,7 @@ private:
 
     
     GlobalCameraData m_cameraData{};
-    std::vector<ModelData> m_objectsData;
+    std::vector<ModelData> m_gridData;
     
     
     
@@ -151,11 +178,13 @@ private:
     VkDescriptorPool m_descriptorPoolCompute;
     ShaderStorageBufferObject m_ssbObjects[2];
 
-
+   
     //Testing
     void TestingAbstraction();
 
 
+    std::vector<ObstacleGraphicData> m_obstacles;
+    std::vector<AgentGraphicData> m_agents;
 
 };
 }

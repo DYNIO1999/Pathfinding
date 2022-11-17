@@ -20,18 +20,21 @@ namespace Pathfinding
         // Timer timer(true);
         Initialize();
 
-        CreateCommandBuffers();
+        CreateCommandBuffers(); //move to SwapChain???
+        
         CreateDescriptorPool();
         CreateDescriptorSets();
-
+        //
+        
         CreateComputePipelineLayout();
         CreateComputePipeline("../shaders/test.comp.spv");
+        //
+        
         CreateComputeStorageBuffers();
         CreateComputeDescriptorPool();
-
         CreateComputeCommandPool();
+        
         BuildComputeCommands();
-
         CalculateCompute();
 
         TestingAbstraction();
@@ -113,14 +116,29 @@ namespace Pathfinding
 
         for (size_t i = 0; i < 2; i++)
         {
-            for (size_t j = 0; j < m_objectsData.size(); j++)
+            for (size_t j = 0; j < m_gridData.size(); j++)
             {
 
-                m_objectsData[j].modelUBOs[i] = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::UNIFORM_BUFFER, sizeof(glm::mat4));
+                m_gridData[j].modelUBOs[i] = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::UNIFORM_BUFFER, sizeof(glm::mat4));
             }
         }
 
+        for (size_t i = 0; i < 2; i++)
+        {
+            for (size_t j = 0; j < m_obstacles.size(); j++)
+            {
 
+                m_obstacles[j].modelUBOs[i] = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::UNIFORM_BUFFER, sizeof(glm::mat4));
+            }
+        }
+        for (size_t i = 0; i < 2; i++)
+        {
+            for (size_t j = 0; j < m_agents.size(); j++)
+            {
+
+                m_agents[j].modelUBOs[i] = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::UNIFORM_BUFFER, sizeof(glm::mat4));
+            }
+        }
     }
     void Application::Shutdown()
     {     
@@ -165,14 +183,25 @@ namespace Pathfinding
         cameraUboValues.view = m_camera->View();
         m_cameraData.cameraUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&cameraUboValues);
 
-        for (size_t i = 0; i < m_objectsData.size(); i++)
+        for (size_t i = 0; i < m_gridData.size(); i++)
         {
-            m_objectsData[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_objectsData[i].transform);
+            m_gridData[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_gridData[i].transform);
+        }
+
+        for (size_t i = 0; i < m_obstacles.size(); i++)
+        {
+            m_obstacles[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_obstacles[i].transform);
+        }
+
+        for (size_t i = 0; i < m_agents.size(); i++)
+        {
+            m_agents[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_agents[i].transform);
         }
     }
 
 void Application::Draw()
     {
+
         uint32_t imageIndex;
         VkResult acquireResult = m_swapchain->AcquireNextImage(&imageIndex);
         if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
@@ -201,7 +230,6 @@ void Application::Draw()
 
         vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-        // Render Pass
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = m_swapchain->RenderPassHandle();
@@ -235,34 +263,41 @@ void Application::Draw()
 
         VkDeviceSize offset = 0;
 
-        // calculate final mesh matrix
-        //view = glm::translate(glm::mat4(1.f), camPos);
-        //model = glm::rotate(model,glm::radians(1.0f), glm::vec3(0.0f,0.0f,1.0f));
-        //model = glm::translate(model, glm::vec3(0.0f, 0.0f, -m_deltaTime.AsSeconds()));
-        //glm::mat4 mesh_matrix = projection * view * model;
-
-        
-
-
-        // upload the matrix to the GPU via push constants
 
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer->BufferHandle(), &offset);
         vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->BufferHandle(),0, VK_INDEX_TYPE_UINT32);
-        //vkCmdDraw(commandBuffer, m_vertices.size(), 1, 0, 0);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 0, 1, &m_cameraData.descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
 
-        for (size_t i = 0; i < m_objectsData.size(); i++)
+        for (size_t i = 0; i < m_gridData.size(); i++)
         {
             
-            PipelinePushConstantData constant;
-            if(i%2==0){
-            constant.color = glm::vec4(0.5,1.0f,0.7f,1.0f);
-            }else{
-                constant.color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-            }
+            PipelinePushConstantData pushConstant;
+            pushConstant.color = m_gridData[i].color;
             
-            vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &constant);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1,&m_objectsData[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
+            vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1,&m_gridData[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
+            vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
+        }
+
+        for (size_t i = 0; i < m_obstacles.size(); i++)
+        {
+
+            PipelinePushConstantData pushConstant;
+            pushConstant.color = m_obstacles[i].color;
+
+            vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1, &m_obstacles[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
+            vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
+        }
+
+        for (size_t i = 0; i < m_agents.size(); i++)
+        {
+
+            PipelinePushConstantData pushConstant;
+            pushConstant.color = m_agents[i].color;
+
+            vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1, &m_agents[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
         }
 
@@ -300,24 +335,62 @@ void Application::Draw()
         m_vertices.emplace_back(Vertex{glm::vec3(1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
 
                 
-        m_objectsData.resize(1000);
+        m_gridData.resize(GRID_SIZE);
         glm::mat4 model = glm::mat4(1);
-        for(size_t i =0;i<m_objectsData.size();i++){
-            glm::mat4 transform = glm::translate(model, glm::vec3(2.0f* i,0.0f,0.0f));
-            m_objectsData[i].transform =transform; 
+        size_t index =0;
+
+        for(size_t i =0;i<GRID_ROW;i++){
+            for(size_t j =0;j<GRID_COLUMN;j++){
+
+                glm::mat4 transform = glm::translate(model, glm::vec3(4.0f * i, 0.0f, -4.0f*j));
+                m_gridData[index].position = glm::vec3(4.0f * i, 0.0f, -4.0f*j);
+                transform = glm::scale(transform, glm::vec3(1.0, 0.5, 1.0));
+                m_gridData[index].transform = transform;
+                m_gridData[index].index=index;
+                index++;
+            }
         }
+
+
+        //TESTING
+        m_obstacles.resize(3);
+
+        m_obstacles[0].position = m_gridData[8].position;
+        m_obstacles[0].transform  = glm::translate(glm::mat4(1),  m_obstacles[0].position+glm::vec3(0.0f,1.5f,0.0f));
+        
+        m_obstacles[1].position = m_gridData[12].position;
+        m_obstacles[1].transform  = glm::translate(glm::mat4(1),  m_obstacles[1].position+glm::vec3(0.0f,1.5f,0.0f));
+        
+        m_obstacles[2].position = m_gridData[22].position;
+        m_obstacles[2].transform = glm::translate(glm::mat4(1), m_obstacles[2].position + glm::vec3(0.0f, 1.5f, 0.0f));
+
+        m_agents.resize(2);
+        for (int i = 0; i < m_agents.size(); i++)
+        {
+            m_agents[i].color = glm::vec4{0.96, 0.0 + (0.1f * (float)i), 0.09, 1.0f};
+        }
+
+        m_agents[0].position = m_gridData[0].position;
+        m_agents[0].transform = glm::translate(glm::mat4(1), m_agents[0].position + glm::vec3(0.0f, 1.5f, 0.0f));
+
+        m_agents[1].position = m_gridData[20].position;
+        m_agents[1].transform = glm::translate(glm::mat4(1), m_agents[1].position + glm::vec3(0.0f, 1.5f, 0.0f));
+    
+        //TESTING
     }
     void Application::CreateDescriptorPool()
     {
         VkDescriptorPoolSize poolSize{};
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = 2 + (m_objectsData.size() * 2);
+        //poolSize.descriptorCount = 2 + (m_gridData.size() * 2);
+        poolSize.descriptorCount = 1000;
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
         poolInfo.pPoolSizes = &poolSize;
-        poolInfo.maxSets = 2 + (m_objectsData.size()*2);
+        //poolInfo.maxSets = 2 + (m_gridData.size()*2);
+        poolInfo.maxSets = 1000;
 
         VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->LogicalDeviceHandle(), &poolInfo, nullptr, &m_descriptorPool));
     }
@@ -356,7 +429,7 @@ void Application::Draw()
 
         for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
-            for (size_t j = 0; j < m_objectsData.size(); j++)
+            for (size_t j = 0; j < m_gridData.size(); j++)
             {
 
                 VkDescriptorSetAllocateInfo allocInfo{};
@@ -364,7 +437,7 @@ void Application::Draw()
                 allocInfo.descriptorPool = m_descriptorPool;
                 allocInfo.descriptorSetCount = 1;
                 allocInfo.pSetLayouts = &layouts[1];
-                vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, &m_objectsData[j].descriptors[i]);
+                vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, &m_gridData[j].descriptors[i]);
             }
         }
 
@@ -372,17 +445,94 @@ void Application::Draw()
 
         for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
-            for (size_t j = 0; j < m_objectsData.size(); j++)
+            for (size_t j = 0; j < m_gridData.size(); j++)
             {
 
                 VkDescriptorBufferInfo bufferInfo{};
-                bufferInfo.buffer = m_objectsData[j].modelUBOs[i]->BufferHandle();
+                bufferInfo.buffer = m_gridData[j].modelUBOs[i]->BufferHandle();
                 bufferInfo.offset = 0;
                 bufferInfo.range = sizeof(glm::mat4);
 
                 VkWriteDescriptorSet descriptorWrite{};
                 descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                descriptorWrite.dstSet = m_objectsData[j].descriptors[i];
+                descriptorWrite.dstSet = m_gridData[j].descriptors[i];
+                descriptorWrite.dstBinding = 0;
+                descriptorWrite.dstArrayElement = 0;
+                descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                descriptorWrite.descriptorCount = 1;
+                descriptorWrite.pBufferInfo = &bufferInfo;
+                vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &descriptorWrite, 0, nullptr);
+            }
+        }
+
+
+        //Blocked Cubes Paths
+
+        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            for (size_t j = 0; j < m_obstacles.size(); j++)
+            {
+
+                VkDescriptorSetAllocateInfo allocInfo{};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = m_descriptorPool;
+                allocInfo.descriptorSetCount = 1;
+                allocInfo.pSetLayouts = &layouts[1];
+                vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, &m_obstacles[j].descriptors[i]);
+            }
+        }
+
+        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            for (size_t j = 0; j < m_obstacles.size(); j++)
+            {
+
+                VkDescriptorBufferInfo bufferInfo{};
+                bufferInfo.buffer = m_obstacles[j].modelUBOs[i]->BufferHandle();
+                bufferInfo.offset = 0;
+                bufferInfo.range = sizeof(glm::mat4);
+
+                VkWriteDescriptorSet descriptorWrite{};
+                descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWrite.dstSet = m_obstacles[j].descriptors[i];
+                descriptorWrite.dstBinding = 0;
+                descriptorWrite.dstArrayElement = 0;
+                descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                descriptorWrite.descriptorCount = 1;
+                descriptorWrite.pBufferInfo = &bufferInfo;
+                vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &descriptorWrite, 0, nullptr);
+            }
+        }
+
+        //Agents
+
+        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            for (size_t j = 0; j < m_agents.size(); j++)
+            {
+
+                VkDescriptorSetAllocateInfo allocInfo{};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = m_descriptorPool;
+                allocInfo.descriptorSetCount = 1;
+                allocInfo.pSetLayouts = &layouts[1];
+                vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, &m_agents[j].descriptors[i]);
+            }
+        }
+
+        for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            for (size_t j = 0; j < m_agents.size(); j++)
+            {
+
+                VkDescriptorBufferInfo bufferInfo{};
+                bufferInfo.buffer = m_agents[j].modelUBOs[i]->BufferHandle();
+                bufferInfo.offset = 0;
+                bufferInfo.range = sizeof(glm::mat4);
+
+                VkWriteDescriptorSet descriptorWrite{};
+                descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWrite.dstSet = m_agents[j].descriptors[i];
                 descriptorWrite.dstBinding = 0;
                 descriptorWrite.dstArrayElement = 0;
                 descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

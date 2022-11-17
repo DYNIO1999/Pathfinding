@@ -37,7 +37,7 @@ namespace Pathfinding{
     private:
         void UpdateCamera();
 
-        float movementSpeed{5.0f};
+        float movementSpeed{15.0f};
         float mouseSensitivity{100.0f};
 
         float m_near{0.1f};
@@ -47,9 +47,9 @@ namespace Pathfinding{
         glm::vec3 m_orientation = glm::vec3(0.0f, 0.0f, -1.0f);
         glm::vec3 m_position = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec3 m_front = glm::vec3(0.0f, 0.0f, -1.0f);
-        glm::vec3 m_up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 m_up = glm::vec3(0.0f, -1.0f, 0.0f);
         glm::vec3 m_right;
-        glm::vec3 m_worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 m_worldUp = glm::vec3(0.0f, -1.0f, 0.0f);
         glm::mat4 m_projection;
         
         bool state{false};
