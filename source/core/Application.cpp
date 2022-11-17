@@ -90,7 +90,14 @@ namespace Pathfinding
         m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, *m_allocator);
 
         m_defaultPipelineSpec = VulkanPipeline::DefaultPipelineSpecification(m_swapchain->RenderPassHandle());
-        m_defaultPipelineSpec.vertexInputDescription = VertexInputDescription::GetVertexDescription();
+        
+        VulkanVertexInputDescription vertexDescription = VulkanVertexInputDescription::Create().
+                                                        AddBinding(0,sizeof(Vertex),VK_VERTEX_INPUT_RATE_VERTEX).
+                                                        AddAttribute(0,0,VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex,position)).
+                                                        AddAttribute(0,1,VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex,color));
+
+
+        m_defaultPipelineSpec.vertexInputDescription = vertexDescription;
         m_defaultPipelineSpec.pushConstantData = std::make_unique<PipelinePushConstantData>(PipelinePushConstantData{glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         m_defaultPipelineSpec.AddDescriptorSetLayout(*m_device);
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
@@ -109,11 +116,7 @@ namespace Pathfinding
             m_allocator->UnmapMemory(m_ssbObjects[i].buffer.allocationHandle);
             m_allocator->DestroyBuffer(m_ssbObjects[i].buffer.bufferHandle,m_ssbObjects[i].buffer.allocationHandle);
         }
-        for (int i = 0; i < 2; i++)
-        {
-            m_allocator->UnmapMemory(m_cameraData.cameraUBOs[i].buffer.allocationHandle);
-            m_allocator->DestroyBuffer(m_cameraData.cameraUBOs[i].buffer.bufferHandle, m_cameraData.cameraUBOs[i].buffer.allocationHandle);
-        }
+        
 
         for (size_t i = 0; i < 2; i++)
         {
@@ -286,7 +289,6 @@ void Application::Draw()
 
     void Application::CreateVertexBuffer()
     {
-        // m_vertexBuffer.allocationHandle
 
         m_vertexBuffer =  std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::VERTEX_BUFFER, m_vertices.data(), sizeof(Vertex)* m_vertices.size());
     }
@@ -301,21 +303,8 @@ void Application::Draw()
 
 
         for(auto i = 0; i< m_swapchain->MAX_FRAMES_IN_FLIGHT;i++){
-            VkDeviceSize bufferSize = sizeof(CameraUBO::Values);
-            VkMemoryAllocateInfo allocInfo = {};
-            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            allocInfo.pNext = nullptr;
-            allocInfo.allocationSize = 0;
-            allocInfo.memoryTypeIndex = 0;
 
-            VkBufferCreateInfo bufferInfo = {};
-            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-            bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            bufferInfo.size = bufferSize;
-
-            m_cameraData.cameraUBOs[i].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_cameraData.cameraUBOs[i].buffer.bufferHandle);
-
-            m_cameraData.cameraUBOs[i].buffer.data = m_allocator->MapMemory(m_cameraData.cameraUBOs[i].buffer.allocationHandle);
+            m_cameraData.cameraUBOs[i] = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::UNIFORM_BUFFER, sizeof(CameraUBO::Values));
         }
 
 
@@ -340,12 +329,11 @@ void Application::Draw()
     void Application::UpdateUniformBuffer(uint32_t currentFrame)
     {
         //Camera
-  
         CameraUBO::Values cameraUboValues{};
         cameraUboValues.proj = m_camera->Projection();
         cameraUboValues.view = m_camera->View();
-        memcpy(m_cameraData.cameraUBOs[currentFrame].buffer.data, &cameraUboValues, sizeof(CameraUBO::Values));
-
+        m_cameraData.cameraUBOs[currentFrame]->UpdateMemory(&cameraUboValues);
+    
         for(size_t i =0; i<m_objectsData.size();i++){
             //m_objectsData[i].modelUBOs[currentFrame].values
             ModelUBO::Values temp;
@@ -384,7 +372,7 @@ void Application::Draw()
 
         for (size_t i = 0; i < 2; i++){
             VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_cameraData.cameraUBOs[i].buffer.bufferHandle;
+            bufferInfo.buffer = m_cameraData.cameraUBOs[i]->BufferHandle();
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(CameraUBO::Values);    
             

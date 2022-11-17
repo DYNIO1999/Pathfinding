@@ -69,13 +69,12 @@ namespace Pathfinding
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = pipelineSpecification.vertexInputDescription.bindings.size();
-        vertexInputInfo.pVertexBindingDescriptions = pipelineSpecification.vertexInputDescription.bindings.data();
+        vertexInputInfo.vertexBindingDescriptionCount = pipelineSpecification.vertexInputDescription.m_bindings.size();
+        vertexInputInfo.pVertexBindingDescriptions = pipelineSpecification.vertexInputDescription.m_bindings.data();
 
-        vertexInputInfo.vertexAttributeDescriptionCount = pipelineSpecification.vertexInputDescription.attributes.size();
-        vertexInputInfo.pVertexAttributeDescriptions = pipelineSpecification.vertexInputDescription.attributes.data();
-        
-        
+        vertexInputInfo.vertexAttributeDescriptionCount = pipelineSpecification.vertexInputDescription.m_attributes.size();
+        vertexInputInfo.pVertexAttributeDescriptions = pipelineSpecification.vertexInputDescription.m_attributes.data();
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         
     

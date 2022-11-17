@@ -50,7 +50,7 @@ struct CameraUBO{
 
 struct GlobalCameraData{
     VkDescriptorSet descriptors[2];
-    CameraUBO cameraUBOs[2]; //cause 2 frames in flight
+    std::unique_ptr<VulkanBuffer> cameraUBOs[2]; //cause 2 frames in flight
 };
 
 

@@ -2,7 +2,11 @@
 
 namespace Pathfinding
 {
-
+    VulkanVertexInputDescriptionBuilder VulkanVertexInputDescription::Create()
+    {
+        return VulkanVertexInputDescriptionBuilder();
+    }
+    
     VulkanBuffer::VulkanBuffer(
        VulkanDevice &device,
        VulkanAllocator &allocator,
@@ -19,9 +23,30 @@ namespace Pathfinding
             CreateVertexBuffer();
         }else if(m_type == VulkanBufferType::INDEX_BUFFER){
             CreateIndexBuffer();
+        }else if(m_type == VulkanBufferType::UNIFORM_BUFFER){
+            CreateUniformBuffer();
+        }
+    }
+
+    VulkanBuffer::VulkanBuffer(
+        VulkanDevice &device,
+        VulkanAllocator &allocator,
+        VulkanBufferType type,
+        uint64_t sizeInBytes) : m_device(device),
+                                m_allocator(allocator),
+                                m_type(type),
+                                m_actualData(nullptr),
+                                m_sizeInBytes(sizeInBytes)
+    {
+        if(m_type == VulkanBufferType::UNIFORM_BUFFER){
+            CreateUniformBuffer();
         }
     }
     VulkanBuffer::~VulkanBuffer(){
+
+        if(m_mappedData)
+            UnMapMemory();
+
         if(m_bufferHandle && m_allocationHandle){
             m_allocator.DestroyBuffer(m_bufferHandle,m_allocationHandle);
         }
@@ -141,5 +166,24 @@ namespace Pathfinding
 
         vkDestroyCommandPool(m_device.LogicalDeviceHandle(), cmdPool, nullptr);
         vkDestroyFence(m_device.LogicalDeviceHandle(), fence, nullptr);
+    }
+    void VulkanBuffer::CreateUniformBuffer(){
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo =BufferCreateInfo(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, m_sizeInBytes);
+        
+        m_allocationHandle = m_allocator.AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_bufferHandle);
+        m_mappedData = m_allocator.MapMemory(m_allocationHandle);
+    }
+
+    void VulkanBuffer::MapMemory(){
+        m_mappedData = m_allocator.MapMemory(m_allocationHandle);
+    }
+    void VulkanBuffer::UnMapMemory(){
+        m_allocator.UnmapMemory(m_allocationHandle);
+    }
+    void VulkanBuffer::UpdateMemory(void *newdata)
+    {
+        m_actualData = newdata;
+        memcpy(m_mappedData, m_actualData, m_sizeInBytes);
     }
 }   
