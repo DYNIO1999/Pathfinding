@@ -37,6 +37,8 @@ namespace Pathfinding
         BuildComputeCommands();
 
         CalculateCompute();
+
+        TestingAbstraction();
         // Init Vulkan
         while (m_window->IsOpen())
         {
@@ -102,6 +104,11 @@ namespace Pathfinding
     {     
         vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
 
+
+        for(int i=0;i<2;i++){
+            m_allocator->UnmapMemory(m_ssbObjects[i].buffer.allocationHandle);
+            m_allocator->DestroyBuffer(m_ssbObjects[i].buffer.bufferHandle,m_ssbObjects[i].buffer.allocationHandle);
+        }
         m_allocator->DestroyBuffer(m_vertexBuffer.bufferHandle, m_vertexBuffer.allocationHandle);
         m_allocator->DestroyBuffer(m_indexBuffer.bufferHandle, m_indexBuffer.allocationHandle);
 
@@ -293,7 +300,7 @@ void Application::Draw()
         bufferCreateInfo = VulkanInitializers::BufferCreateInfo(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                                                 VK_SHARING_MODE_EXCLUSIVE,
                                                                 m_vertices.size() * sizeof(Vertex));
-        VulkanBuffer stagingBuffer;
+        VulkanBufferTest stagingBuffer;
 
         VmaAllocation stagingBufferAllocation =
             m_allocator->AllocateBuffer(
@@ -364,7 +371,7 @@ void Application::Draw()
         bufferCreateInfo = VulkanInitializers::BufferCreateInfo(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                                                 VK_SHARING_MODE_EXCLUSIVE,
                                                                 sizeof(m_indices[0]) * m_indices.size());
-        VulkanBuffer stagingBuffer;
+        VulkanBufferTest stagingBuffer;
 
         VmaAllocation stagingBufferAllocation =
             m_allocator->AllocateBuffer(
@@ -762,5 +769,14 @@ void Application::Draw()
             it2 = it2 + 1;
         }
         
+    }
+    void Application::TestingAbstraction(){
+        std::shared_ptr<VulkanBuffer> test =  
+        VulkanBuffer::Create(*m_device,*m_allocator)
+                .Type(VulkanBufferType::VERTEX_BUFFER)
+                .Data(testData.data(), sizeof(float) *testData.size())
+                .MapMemory()
+                .Build();
+    
     }
 }

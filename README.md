@@ -36,18 +36,23 @@ Engine initialization | Boilerplate
     Descriptors[DONE] [NOT_GOOD_ENOUGH]    
     UniformBuffer [DONE] [NOT_GOOD_ENOUGH]
     KeyCallbacks or Key State recording to handle single key pressing [DONE]
-# DEADLINE [/15/16]
     ComputePipeline[DONE] [NOT_GOOD_ENOUGH]
+# DEADLINE [/16/17]
+    Abstraction/Encapsulation/Refactoring
+        - Pipelines
+        - Objects
+        - Vertex Buffer
+        - Index Buffer
+        - Uniform Buffer
+        - Compute Pipeline      
     Grid/Scene []
+
+# DEADLINE [/18/19/20]
+    Pathfinding CPU side
     Abstraction/Encapsulation/Refactoring
-# DEADLINE [17]
-    Abstraction/Encapsulation/Refactoring
-# DEADLINE [/18/19/20/21/22/23/24/25/26/27/28/29/30]
+
+# DEADLINE [/21/22/23/24/25/26/27/28/29/30/1/2/3/4/5/6/7/8/9/10/11/12/13/14]
     Pathfinding GPU
-    Pathfinding CPU side?
-    
-    Textures [] ??
-    CubeMap [] ??
     Abstraction/Encapsulation?
 
 # DEADLINE []

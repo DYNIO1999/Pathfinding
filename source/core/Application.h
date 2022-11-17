@@ -22,12 +22,12 @@
 #include "Logger.h"
 
 #include "camera/Camera.h"
-
+#include "../renderer/VulkanBuffer.h"
 
 namespace Pathfinding{
 
 
-struct VulkanBuffer{
+struct VulkanBufferTest{
     VkBuffer bufferHandle = VK_NULL_HANDLE;
     VmaAllocation allocationHandle;
     float size;
@@ -35,13 +35,13 @@ struct VulkanBuffer{
 };
 
 struct ShaderStorageBufferObject{
-    VulkanBuffer buffer;
+    VulkanBufferTest buffer;
     std::vector<int> data;
     VkDescriptorSet descriptor;
 };
 
 struct CameraUBO{
-    VulkanBuffer buffer;
+    VulkanBufferTest buffer;
     struct Values
     {
         glm::mat4 view;
@@ -56,7 +56,7 @@ struct GlobalCameraData{
 
 
 struct ModelUBO{
-    VulkanBuffer buffer;
+    VulkanBufferTest buffer;
     struct Values
     {
         glm::mat4 model;
@@ -125,8 +125,8 @@ private:
     glm::mat4 model = glm::mat4(1);
 
     VkDescriptorPool m_descriptorPool;
-    VulkanBuffer m_vertexBuffer{};
-    VulkanBuffer m_indexBuffer{};
+    VulkanBufferTest m_vertexBuffer{};
+    VulkanBufferTest m_indexBuffer{};
     std::vector<Vertex> m_vertices;
     std::vector<u_int32_t> m_indices{0, 1, 2, 
                                      2, 1, 3,
@@ -143,7 +143,7 @@ private:
 
     std::unique_ptr<Camera> m_camera;
 
-
+    
     //compute Testing
 
     void CreateComputePipelineLayout();
@@ -160,6 +160,11 @@ private:
     VkPipeline m_computePipeline{VK_NULL_HANDLE};
     VkDescriptorPool m_descriptorPoolCompute;
     ShaderStorageBufferObject m_ssbObjects[2];
+
+
+    //Testing
+    void TestingAbstraction();
+    std::vector<float> testData{1.1f, 1.0f, 1.0f, 1.0f, 1.0f};
 };
 }
 #endif
