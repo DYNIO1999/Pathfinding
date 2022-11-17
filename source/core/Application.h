@@ -18,7 +18,6 @@
 #include "../renderer/VulkanAllocator.h"
 
 #include "../objects/Object.h"
-#include "../renderer/VulkanInitializers.h"
 #include "Logger.h"
 
 #include "camera/Camera.h"
@@ -125,8 +124,10 @@ private:
     glm::mat4 model = glm::mat4(1);
 
     VkDescriptorPool m_descriptorPool;
-    VulkanBufferTest m_vertexBuffer{};
-    VulkanBufferTest m_indexBuffer{};
+    
+    std::unique_ptr<VulkanBuffer> m_vertexBuffer;
+    std::unique_ptr<VulkanBuffer> m_indexBuffer;
+
     std::vector<Vertex> m_vertices;
     std::vector<u_int32_t> m_indices{0, 1, 2, 
                                      2, 1, 3,
@@ -164,7 +165,9 @@ private:
 
     //Testing
     void TestingAbstraction();
-    std::vector<float> testData{1.1f, 1.0f, 1.0f, 1.0f, 1.0f};
+
+
+
 };
 }
 #endif

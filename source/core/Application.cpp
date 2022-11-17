@@ -109,9 +109,6 @@ namespace Pathfinding
             m_allocator->UnmapMemory(m_ssbObjects[i].buffer.allocationHandle);
             m_allocator->DestroyBuffer(m_ssbObjects[i].buffer.bufferHandle,m_ssbObjects[i].buffer.allocationHandle);
         }
-        m_allocator->DestroyBuffer(m_vertexBuffer.bufferHandle, m_vertexBuffer.allocationHandle);
-        m_allocator->DestroyBuffer(m_indexBuffer.bufferHandle, m_indexBuffer.allocationHandle);
-
         for (int i = 0; i < 2; i++)
         {
             m_allocator->UnmapMemory(m_cameraData.cameraUBOs[i].buffer.allocationHandle);
@@ -225,8 +222,8 @@ void Application::Draw()
 
         // upload the matrix to the GPU via push constants
 
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.bufferHandle, &offset);
-        vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer.bufferHandle,0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer->BufferHandle(), &offset);
+        vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->BufferHandle(),0, VK_INDEX_TYPE_UINT32);
         //vkCmdDraw(commandBuffer, m_vertices.size(), 1, 0, 0);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 0, 1, &m_cameraData.descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
 
@@ -290,143 +287,13 @@ void Application::Draw()
     void Application::CreateVertexBuffer()
     {
         // m_vertexBuffer.allocationHandle
-        
-        VkBufferCreateInfo bufferCreateInfo1 = VulkanInitializers::BufferCreateInfo(
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE, m_vertices.size() * sizeof(Vertex));
-        m_vertexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_vertexBuffer.bufferHandle);
 
-        VkBufferCreateInfo bufferCreateInfo{};
-
-        bufferCreateInfo = VulkanInitializers::BufferCreateInfo(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                                                VK_SHARING_MODE_EXCLUSIVE,
-                                                                m_vertices.size() * sizeof(Vertex));
-        VulkanBufferTest stagingBuffer;
-
-        VmaAllocation stagingBufferAllocation =
-            m_allocator->AllocateBuffer(
-                &bufferCreateInfo,
-                VMA_MEMORY_USAGE_CPU_TO_GPU,
-                &stagingBuffer.bufferHandle);
-
-        stagingBuffer.data = m_allocator->MapMemory(stagingBufferAllocation);
-        memcpy(stagingBuffer.data, m_vertices.data(), m_vertices.size() * sizeof(Vertex));
-        m_allocator->UnmapMemory(stagingBufferAllocation);
-
-        VkCommandPool cmdPool;
-
-        VkCommandPoolCreateInfo cmdPoolCreateInfo{};
-        cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        cmdPoolCreateInfo.queueFamilyIndex = m_device->GraphicsQueueFamilyIndex();
-        cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-
-        VK_CHECK_RESULT(vkCreateCommandPool(m_device->LogicalDeviceHandle(), &cmdPoolCreateInfo, VK_NULL_HANDLE, &cmdPool));
-
-        VkCommandBuffer cmdBuffer;
-
-        VkCommandBufferAllocateInfo cmdBufferAllocateInfo{};
-        cmdBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        cmdBufferAllocateInfo.commandPool = cmdPool;
-        cmdBufferAllocateInfo.commandBufferCount = 1;
-        cmdBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        vkAllocateCommandBuffers(m_device->LogicalDeviceHandle(), &cmdBufferAllocateInfo, &cmdBuffer);
-
-        VkCommandBufferBeginInfo commandBufferBeginInfo = {};
-        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(cmdBuffer, &commandBufferBeginInfo);
-        VkBufferCopy bufferCopy = {};
-        bufferCopy.size = m_vertices.size() * sizeof(Vertex);
-        vkCmdCopyBuffer(cmdBuffer, stagingBuffer.bufferHandle, m_vertexBuffer.bufferHandle, 1, &bufferCopy);
-        vkEndCommandBuffer(cmdBuffer);
-
-
-        VkFence fence;
-        VkFenceCreateInfo fenceCreateInfo = {};
-        fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        VK_CHECK_RESULT(vkCreateFence(m_device->LogicalDeviceHandle(), &fenceCreateInfo, nullptr, &fence));
-
-        VkSubmitInfo submitInfo = {};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &cmdBuffer;
-
-        VK_CHECK_RESULT(vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo, fence));
-        vkWaitForFences(m_device->LogicalDeviceHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
-
-        vkDestroyCommandPool(m_device->LogicalDeviceHandle(), cmdPool, nullptr);
-        m_allocator->DestroyBuffer(stagingBuffer.bufferHandle, stagingBufferAllocation);
-        vkDestroyFence(m_device->LogicalDeviceHandle(), fence, nullptr);
+        m_vertexBuffer =  std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::VERTEX_BUFFER, m_vertices.data(), sizeof(Vertex)* m_vertices.size());
     }
     void Application::CreateIndexBuffer()
     {
 
-        VkBufferCreateInfo bufferCreateInfo1 = VulkanInitializers::BufferCreateInfo(
-            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE,
-            sizeof(m_indices[0]) * m_indices.size());
-        m_indexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_indexBuffer.bufferHandle);
-
-        VkBufferCreateInfo bufferCreateInfo{};
-
-        bufferCreateInfo = VulkanInitializers::BufferCreateInfo(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                                                VK_SHARING_MODE_EXCLUSIVE,
-                                                                sizeof(m_indices[0]) * m_indices.size());
-        VulkanBufferTest stagingBuffer;
-
-        VmaAllocation stagingBufferAllocation =
-            m_allocator->AllocateBuffer(
-                &bufferCreateInfo,
-                VMA_MEMORY_USAGE_CPU_TO_GPU,
-                &stagingBuffer.bufferHandle);
-
-        stagingBuffer.data = m_allocator->MapMemory(stagingBufferAllocation);
-        memcpy(stagingBuffer.data, m_indices.data(), sizeof(m_indices[0]) * m_indices.size());
-        m_allocator->UnmapMemory(stagingBufferAllocation);
-
-        VkCommandPool cmdPool;
-
-        VkCommandPoolCreateInfo cmdPoolCreateInfo{};
-        cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        cmdPoolCreateInfo.queueFamilyIndex = m_device->GraphicsQueueFamilyIndex();
-        cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-
-        VK_CHECK_RESULT(vkCreateCommandPool(m_device->LogicalDeviceHandle(), &cmdPoolCreateInfo, VK_NULL_HANDLE, &cmdPool));
-
-        VkCommandBuffer cmdBuffer;
-
-        VkCommandBufferAllocateInfo cmdBufferAllocateInfo{};
-        cmdBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        cmdBufferAllocateInfo.commandPool = cmdPool;
-        cmdBufferAllocateInfo.commandBufferCount = 1;
-        cmdBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        vkAllocateCommandBuffers(m_device->LogicalDeviceHandle(), &cmdBufferAllocateInfo, &cmdBuffer);
-
-        VkCommandBufferBeginInfo commandBufferBeginInfo = {};
-        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(cmdBuffer, &commandBufferBeginInfo);
-        VkBufferCopy bufferCopy = {};
-        bufferCopy.size = sizeof(m_indices[0]) * m_indices.size();
-        vkCmdCopyBuffer(cmdBuffer, stagingBuffer.bufferHandle, m_indexBuffer.bufferHandle, 1, &bufferCopy);
-        vkEndCommandBuffer(cmdBuffer);
-
-        VkFence fence;
-        VkFenceCreateInfo fenceCreateInfo = {};
-        fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        VK_CHECK_RESULT(vkCreateFence(m_device->LogicalDeviceHandle(), &fenceCreateInfo, nullptr, &fence));
-
-        VkSubmitInfo submitInfo = {};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &cmdBuffer;
-
-        VK_CHECK_RESULT(vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo, fence));
-        vkWaitForFences(m_device->LogicalDeviceHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
-
-        vkDestroyCommandPool(m_device->LogicalDeviceHandle(), cmdPool, nullptr);
-        m_allocator->DestroyBuffer(stagingBuffer.bufferHandle, stagingBufferAllocation);
-        vkDestroyFence(m_device->LogicalDeviceHandle(), fence, nullptr);
+        m_indexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::INDEX_BUFFER, m_indices.data(), sizeof(u_int32_t) * m_indices.size());
     }
 
     void Application::CreateUniformBuffer()
@@ -772,7 +639,6 @@ void Application::Draw()
     }
     void Application::TestingAbstraction(){
      APP_ERROR("TESTSING");
-        VulkanBuffer test(*m_device,*m_allocator,VulkanBufferType::VERTEX_BUFFER,testData.data(), sizeof(float)* testData.size());
-    
+     
     }
 }

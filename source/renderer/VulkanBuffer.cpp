@@ -17,6 +17,8 @@ namespace Pathfinding
     {
         if(m_type == VulkanBufferType::VERTEX_BUFFER){
             CreateVertexBuffer();
+        }else if(m_type == VulkanBufferType::INDEX_BUFFER){
+            CreateIndexBuffer();
         }
     }
     VulkanBuffer::~VulkanBuffer(){
@@ -60,8 +62,44 @@ namespace Pathfinding
         data= m_allocator.MapMemory(stagingBufferAllocation);
         memcpy(data, m_actualData, m_sizeInBytes);
         m_allocator.UnmapMemory(stagingBufferAllocation);
+        
+        Transfer(stagingBufferHandle);
+        
+        m_allocator.DestroyBuffer(stagingBufferHandle, stagingBufferAllocation);
+    }
 
+
+    void VulkanBuffer::CreateIndexBuffer(){
+        VkBufferCreateInfo bufferCreateInfo = BufferCreateInfo(
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE,
+            m_sizeInBytes);
+        m_allocationHandle = m_allocator.AllocateBuffer(&bufferCreateInfo, VMA_MEMORY_USAGE_GPU_ONLY, &m_bufferHandle);
+
+        VkBufferCreateInfo stagingBufferCreateInfo{};
+
+        stagingBufferCreateInfo = BufferCreateInfo(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                                    VK_SHARING_MODE_EXCLUSIVE,
+                                                    m_sizeInBytes);
+        VkBuffer stagingBufferHandle;
+
+        VmaAllocation stagingBufferAllocation =
+            m_allocator.AllocateBuffer(
+                &stagingBufferCreateInfo,
+                VMA_MEMORY_USAGE_CPU_TO_GPU,
+                &stagingBufferHandle);
+
+        void *data;
+        data = m_allocator.MapMemory(stagingBufferAllocation);
+        memcpy(data, m_actualData, m_sizeInBytes);
+        m_allocator.UnmapMemory(stagingBufferAllocation);
+
+        Transfer(stagingBufferHandle);    
+        m_allocator.DestroyBuffer(stagingBufferHandle, stagingBufferAllocation);
+    }
+
+    void VulkanBuffer::Transfer(VkBuffer& stagingBufferHandle){
         VkCommandPool cmdPool;
+
         VkCommandPoolCreateInfo cmdPoolCreateInfo{};
         cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         cmdPoolCreateInfo.queueFamilyIndex = m_device.GraphicsQueueFamilyIndex();
@@ -102,7 +140,6 @@ namespace Pathfinding
         vkWaitForFences(m_device.LogicalDeviceHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
 
         vkDestroyCommandPool(m_device.LogicalDeviceHandle(), cmdPool, nullptr);
-        m_allocator.DestroyBuffer(stagingBufferHandle, stagingBufferAllocation);
         vkDestroyFence(m_device.LogicalDeviceHandle(), fence, nullptr);
     }
 }   

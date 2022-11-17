@@ -27,13 +27,20 @@ public:
     //void UpdateData(void* data, uint64_t sizeInBytes);
     //void MapData();
 
+
+    VkBuffer& BufferHandle(){return m_bufferHandle;}
+
     VulkanBuffer(const VulkanBuffer &) = delete;
     void operator=(const VulkanBuffer &) = delete;
     
 private:
     static VkBufferCreateInfo BufferCreateInfo(VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t sizeInBytes);
     
+
+    
     void CreateVertexBuffer();
+    void CreateIndexBuffer();
+    void Transfer(VkBuffer &stagingBufferHandle);
 
     VulkanDevice& m_device;
     VulkanAllocator& m_allocator;
