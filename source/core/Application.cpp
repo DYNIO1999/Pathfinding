@@ -19,12 +19,8 @@ namespace Pathfinding
     {
         // Timer timer(true);
         Initialize();
-        InitObjects();
 
         CreateCommandBuffers();
-        CreateVertexBuffer();
-        CreateIndexBuffer();
-        CreateUniformBuffer();
         CreateDescriptorPool();
         CreateDescriptorSets();
 
@@ -55,11 +51,7 @@ namespace Pathfinding
             // auto [x,y] = Input::MousePosition();
             // APP_INFO("MOUSE_POSITION  X:{} Y:{}",x,y);
             // FRAME END
-
-         
-            m_camera->Update(m_deltaTime.AsSeconds());
-            UpdateUniformBuffer(m_swapchain->CurrentFrame());
-
+            Update();
             Draw();
             m_window->ProcessEvents(); // process events/inputs
 
@@ -103,28 +95,40 @@ namespace Pathfinding
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
 
 
-        auto [width,height ] = Application::GetWindow()->WindowSize();
+        auto [width,height] = Application::GetWindow()->WindowSize();
         m_camera = std::make_unique<Camera>(static_cast<float>(width), static_cast<float>(height));
+
+        InitObjects(); //Geometry initialization such as vertices and indices
+
+
+        m_vertexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::VERTEX_BUFFER, m_vertices.data(), sizeof(Vertex) * m_vertices.size());
+        m_indexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::INDEX_BUFFER, m_indices.data(), sizeof(u_int32_t) * m_indices.size());
+        
+        //Uniform Buffers
+        for (auto i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
+        {
+
+            m_cameraData.cameraUBOs[i] = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::UNIFORM_BUFFER, sizeof(CameraUBO::Values));
+        }
+
+        for (size_t i = 0; i < 2; i++)
+        {
+            for (size_t j = 0; j < m_objectsData.size(); j++)
+            {
+
+                m_objectsData[j].modelUBOs[i] = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::UNIFORM_BUFFER, sizeof(glm::mat4));
+            }
+        }
+
 
     }
     void Application::Shutdown()
     {     
         vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
 
-
         for(int i=0;i<2;i++){
             m_allocator->UnmapMemory(m_ssbObjects[i].buffer.allocationHandle);
             m_allocator->DestroyBuffer(m_ssbObjects[i].buffer.bufferHandle,m_ssbObjects[i].buffer.allocationHandle);
-        }
-        
-
-        for (size_t i = 0; i < 2; i++)
-        {
-            for (size_t j = 0; j < m_objectsData.size(); j++)
-            {
-                m_allocator->UnmapMemory(m_objectsData[j].modelUBOs[i].buffer.allocationHandle);
-                m_allocator->DestroyBuffer(m_objectsData[j].modelUBOs[i].buffer.bufferHandle, m_objectsData[j].modelUBOs[i].buffer.allocationHandle);
-            }
         }
 
         for(auto it: m_defaultPipelineSpec.descriptorSetLayouts){
@@ -150,6 +154,23 @@ namespace Pathfinding
             APP_ERROR("DOESNT WORK");
         }
     }
+
+    void Application::Update()
+    {
+
+        m_camera->Update(m_deltaTime.AsSeconds());
+
+        CameraUBO::Values cameraUboValues{};
+        cameraUboValues.proj = m_camera->Projection();
+        cameraUboValues.view = m_camera->View();
+        m_cameraData.cameraUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&cameraUboValues);
+
+        for (size_t i = 0; i < m_objectsData.size(); i++)
+        {
+            m_objectsData[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_objectsData[i].transform);
+        }
+    }
+
 void Application::Draw()
     {
         uint32_t imageIndex;
@@ -286,61 +307,6 @@ void Application::Draw()
             m_objectsData[i].transform =transform; 
         }
     }
-
-    void Application::CreateVertexBuffer()
-    {
-
-        m_vertexBuffer =  std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::VERTEX_BUFFER, m_vertices.data(), sizeof(Vertex)* m_vertices.size());
-    }
-    void Application::CreateIndexBuffer()
-    {
-
-        m_indexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::INDEX_BUFFER, m_indices.data(), sizeof(u_int32_t) * m_indices.size());
-    }
-
-    void Application::CreateUniformBuffer()
-    {
-
-
-        for(auto i = 0; i< m_swapchain->MAX_FRAMES_IN_FLIGHT;i++){
-
-            m_cameraData.cameraUBOs[i] = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::UNIFORM_BUFFER, sizeof(CameraUBO::Values));
-        }
-
-
-    for(size_t i =0; i<2;i++){
-        for(size_t j =0; j<m_objectsData.size();j++){
-            VkDeviceSize bufferSize = sizeof(ModelUBO::Values);
-            VkMemoryAllocateInfo allocInfo = {};
-            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            allocInfo.pNext = nullptr;
-            allocInfo.allocationSize = 0;
-            allocInfo.memoryTypeIndex = 0;
-            VkBufferCreateInfo bufferInfo = {};
-            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-            bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            bufferInfo.size = bufferSize;
-            m_objectsData[j].modelUBOs[i].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_objectsData[j].modelUBOs[i].buffer.bufferHandle);
-            m_objectsData[j].modelUBOs[i].buffer.data = m_allocator->MapMemory(m_objectsData[j].modelUBOs[i].buffer.allocationHandle);
-        }
-    }
-    }
-
-    void Application::UpdateUniformBuffer(uint32_t currentFrame)
-    {
-        //Camera
-        CameraUBO::Values cameraUboValues{};
-        cameraUboValues.proj = m_camera->Projection();
-        cameraUboValues.view = m_camera->View();
-        m_cameraData.cameraUBOs[currentFrame]->UpdateMemory(&cameraUboValues);
-    
-        for(size_t i =0; i<m_objectsData.size();i++){
-            //m_objectsData[i].modelUBOs[currentFrame].values
-            ModelUBO::Values temp;
-            temp.model = m_objectsData[i].transform;
-            memcpy(m_objectsData[i].modelUBOs[currentFrame].buffer.data, &temp, sizeof(ModelUBO::Values));
-        }   
-    }
     void Application::CreateDescriptorPool()
     {
         VkDescriptorPoolSize poolSize{};
@@ -410,9 +376,9 @@ void Application::Draw()
             {
 
                 VkDescriptorBufferInfo bufferInfo{};
-                bufferInfo.buffer = m_objectsData[j].modelUBOs[i].buffer.bufferHandle;
+                bufferInfo.buffer = m_objectsData[j].modelUBOs[i]->BufferHandle();
                 bufferInfo.offset = 0;
-                bufferInfo.range = sizeof(ModelUBO::Values);
+                bufferInfo.range = sizeof(glm::mat4);
 
                 VkWriteDescriptorSet descriptorWrite{};
                 descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -625,8 +591,9 @@ void Application::Draw()
         }
         
     }
-    void Application::TestingAbstraction(){
-     APP_ERROR("TESTSING");
-     
+
+    void Application::TestingAbstraction()
+    {
+        APP_ERROR("TESTSING");
     }
 }

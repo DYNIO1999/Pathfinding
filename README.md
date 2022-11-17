@@ -39,12 +39,13 @@ Engine initialization | Boilerplate
     ComputePipeline[DONE] 
 # DEADLINE [/17/18]
     Encapsulation/Refactoring
-        - Pipelines
-        - Objects
-        - Vertex Buffer
-        - Index Buffer
-        - Uniform Buffer
-        - Compute Pipeline      
+        - Vertex Buffer [DONE]
+        - Index Buffer [DONE]
+        - Uniform Buffer [DONE]
+        - Graphic Pipeline []
+        - Storage Buffer []
+        - Compute Pipeline []     
+        - Objects []
     Grid/Scene []
 
 # DEADLINE [/19/20]

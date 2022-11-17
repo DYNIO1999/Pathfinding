@@ -54,18 +54,11 @@ struct GlobalCameraData{
 };
 
 
-struct ModelUBO{
-    VulkanBufferTest buffer;
-    struct Values
-    {
-        glm::mat4 model;
-    } values;
-};
 
 struct ModelData{
     glm::mat4 transform;
     VkDescriptorSet descriptors[2];
-    ModelUBO modelUBOs[2]; // cause 2 frames in flight
+    std::unique_ptr<VulkanBuffer> modelUBOs[2]; // cause 2 frames in flight
 };
 
 class Application
@@ -77,8 +70,10 @@ public:
 
     static std::shared_ptr<Window> GetWindow(){return m_window;}
     static bool IsValidationEnabled() { return m_enableValidation; }
-
+    
+    void Update();
     void Draw();
+    
     void CreateCommandBuffers();
     void UpdateUniformBuffer(uint32_t currentFrame);
     void CreateUniformBuffer();
@@ -110,12 +105,6 @@ private:
 
     std::vector<VkCommandBuffer> commandBuffers;
 
-   
-
-    
-
-    void CreateVertexBuffer();
-    void CreateIndexBuffer();
     void CreateDescriptorPool();
     void CreateDescriptorSets();
     
