@@ -29,16 +29,16 @@ Engine initialization | Boilerplate
     Code Refactoring [DONE]
     Push Constant Buffer [DONE]
     DepthStencil [DONE]
-    Camera 3D [DONE] [NOT_GOOD_ENOUGH]
-    VertexBuffers [DONE] [NOT_GOOD_ENOUGH]
-    StagingBuffer [DONE] [NOT_GOOD_ENOUGH]
-    IndexBuffers [DONE] [NOT_GOOD_ENOUGH]
-    Descriptors[DONE] [NOT_GOOD_ENOUGH]    
-    UniformBuffer [DONE] [NOT_GOOD_ENOUGH]
+    Camera 3D [DONE] 
+    VertexBuffers [DONE] 
+    StagingBuffer [DONE] 
+    IndexBuffers [DONE] 
+    Descriptors[DONE]     
+    UniformBuffer [DONE] 
     KeyCallbacks or Key State recording to handle single key pressing [DONE]
-    ComputePipeline[DONE] [NOT_GOOD_ENOUGH]
-# DEADLINE [/16/17]
-    Abstraction/Encapsulation/Refactoring
+    ComputePipeline[DONE] 
+# DEADLINE [/17/18]
+    Encapsulation/Refactoring
         - Pipelines
         - Objects
         - Vertex Buffer
@@ -47,7 +47,7 @@ Engine initialization | Boilerplate
         - Compute Pipeline      
     Grid/Scene []
 
-# DEADLINE [/18/19/20]
+# DEADLINE [/19/20]
     Pathfinding CPU side
     Abstraction/Encapsulation/Refactoring
 

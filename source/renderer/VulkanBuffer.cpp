@@ -1,66 +1,73 @@
 #include "VulkanBuffer.h"
-#include "VulkanInitializers.h"
 
-#include "../core/Logger.h"
 namespace Pathfinding
 {
 
-    VulkanBufferBuilder&& VulkanBuffer::Create(VulkanDevice &device, VulkanAllocator &allocator) {
-        return std::move(VulkanBufferBuilder{device,allocator});
+    VulkanBuffer::VulkanBuffer(
+       VulkanDevice &device,
+       VulkanAllocator &allocator,
+       VulkanBufferType type,
+       void *data,
+       uint64_t sizeInBytes):
+           m_device(device),
+           m_allocator(allocator),
+           m_type(type),
+           m_actualData(data),
+           m_sizeInBytes(sizeInBytes)
+    {
+        if(m_type == VulkanBufferType::VERTEX_BUFFER){
+            CreateVertexBuffer();
+        }
+    }
+    VulkanBuffer::~VulkanBuffer(){
+        if(m_bufferHandle && m_allocationHandle){
+            m_allocator.DestroyBuffer(m_bufferHandle,m_allocationHandle);
+        }
     }
 
-    VulkanBuffer::VulkanBuffer(VulkanDevice &device, VulkanAllocator &allocator):
-    m_deviceRef(device),
-    m_allocatorRef(allocator)
+    VkBufferCreateInfo VulkanBuffer::BufferCreateInfo(VkBufferUsageFlags usage, VkSharingMode sharingMode, uint32_t sizeInBytes)
     {
-        APP_ERROR("CREATED BUFFER");
+        VkBufferCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        info.usage = usage;
+        info.size = sizeInBytes;
+        info.sharingMode = sharingMode;
+        return info;
     }
 
-    VulkanBuffer::~VulkanBuffer()
-    {
-        if(m_allocationHandle){
-            APP_ERROR("DESTROYED BUFFER");
-            m_allocatorRef.DestroyBuffer(m_bufferHandle,m_allocationHandle);
-        }   
-    }
-    void VulkanBuffer::CreateVertexBuffer()
-    {
+    void VulkanBuffer::CreateVertexBuffer(){
 
-        APP_ERROR(m_sizeInBytes);
-        m_bufferCreateInfo = VulkanInitializers::BufferCreateInfo(
+        VkBufferCreateInfo bufferCreateInfo = BufferCreateInfo(
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE, m_sizeInBytes);
 
-        m_allocationHandle =m_allocatorRef.AllocateBuffer(&m_bufferCreateInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_bufferHandle);
+        m_allocationHandle = m_allocator.AllocateBuffer(&bufferCreateInfo, VMA_MEMORY_USAGE_GPU_ONLY, &m_bufferHandle);
 
-        //Staging buffer
-        VkBufferCreateInfo bufferCreateInfo2{};
+        VkBufferCreateInfo stagingbufferCreateInfo{};
 
-        bufferCreateInfo2 = VulkanInitializers::BufferCreateInfo(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                                                 VK_SHARING_MODE_EXCLUSIVE,
-                                                                 m_sizeInBytes);
+        stagingbufferCreateInfo = BufferCreateInfo(
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_SHARING_MODE_EXCLUSIVE, m_sizeInBytes);
 
-        VmaAllocation stagingBufferAllocationHandle{nullptr};
-        VkBuffer stagingBufferHandle{nullptr};
-        void* stagingData{nullptr};
 
-        stagingBufferAllocationHandle =
-            m_allocatorRef.AllocateBuffer(
-                &bufferCreateInfo2,
+        VkBuffer stagingBufferHandle;
+
+        VmaAllocation stagingBufferAllocation =
+            m_allocator.AllocateBuffer(
+                &stagingbufferCreateInfo,
                 VMA_MEMORY_USAGE_CPU_TO_GPU,
                 &stagingBufferHandle);
 
-        stagingData = m_allocatorRef.MapMemory(stagingBufferAllocationHandle);
-        memcpy(stagingData, m_actualData, m_sizeInBytes);
-        m_allocatorRef.UnmapMemory(stagingBufferAllocationHandle);
+        void* data;
+        data= m_allocator.MapMemory(stagingBufferAllocation);
+        memcpy(data, m_actualData, m_sizeInBytes);
+        m_allocator.UnmapMemory(stagingBufferAllocation);
 
         VkCommandPool cmdPool;
-
         VkCommandPoolCreateInfo cmdPoolCreateInfo{};
         cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        cmdPoolCreateInfo.queueFamilyIndex = m_deviceRef.GraphicsQueueFamilyIndex();
+        cmdPoolCreateInfo.queueFamilyIndex = m_device.GraphicsQueueFamilyIndex();
         cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
-        VK_CHECK_RESULT(vkCreateCommandPool(m_deviceRef.LogicalDeviceHandle(), &cmdPoolCreateInfo, VK_NULL_HANDLE, &cmdPool));
+        VK_CHECK_RESULT(vkCreateCommandPool(m_device.LogicalDeviceHandle(), &cmdPoolCreateInfo, VK_NULL_HANDLE, &cmdPool));
 
         VkCommandBuffer cmdBuffer;
 
@@ -69,7 +76,7 @@ namespace Pathfinding
         cmdBufferAllocateInfo.commandPool = cmdPool;
         cmdBufferAllocateInfo.commandBufferCount = 1;
         cmdBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        vkAllocateCommandBuffers(m_deviceRef.LogicalDeviceHandle(), &cmdBufferAllocateInfo, &cmdBuffer);
+        vkAllocateCommandBuffers(m_device.LogicalDeviceHandle(), &cmdBufferAllocateInfo, &cmdBuffer);
 
         VkCommandBufferBeginInfo commandBufferBeginInfo = {};
         commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -84,19 +91,18 @@ namespace Pathfinding
         VkFence fence;
         VkFenceCreateInfo fenceCreateInfo = {};
         fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        VK_CHECK_RESULT(vkCreateFence(m_deviceRef.LogicalDeviceHandle(), &fenceCreateInfo, nullptr, &fence));
+        VK_CHECK_RESULT(vkCreateFence(m_device.LogicalDeviceHandle(), &fenceCreateInfo, nullptr, &fence));
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &cmdBuffer;
-        
 
-        VK_CHECK_RESULT(vkQueueSubmit(m_deviceRef.GraphicsQueueHandle(), 1, &submitInfo, fence));
-        vkWaitForFences(m_deviceRef.LogicalDeviceHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
+        VK_CHECK_RESULT(vkQueueSubmit(m_device.GraphicsQueueHandle(), 1, &submitInfo, fence));
+        vkWaitForFences(m_device.LogicalDeviceHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
 
-        vkDestroyCommandPool(m_deviceRef.LogicalDeviceHandle(), cmdPool, nullptr);
-        m_allocatorRef.DestroyBuffer(stagingBufferHandle, stagingBufferAllocationHandle);
-        vkDestroyFence(m_deviceRef.LogicalDeviceHandle(), fence, nullptr);
+        vkDestroyCommandPool(m_device.LogicalDeviceHandle(), cmdPool, nullptr);
+        m_allocator.DestroyBuffer(stagingBufferHandle, stagingBufferAllocation);
+        vkDestroyFence(m_device.LogicalDeviceHandle(), fence, nullptr);
     }
-}
+}   

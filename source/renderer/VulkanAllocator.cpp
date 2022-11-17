@@ -31,16 +31,10 @@ namespace Pathfinding
         VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
         vmaGetHeapBudgets(m_allocatorHandle, budgets);
 
-        printf("My heap currently has %u allocations taking %llu B,\n",
+        APP_ERROR("VMA ALLOCATOR: has {} allocations taking {} bytes",
                budgets[heapIndex].statistics.allocationCount,
                budgets[heapIndex].statistics.allocationBytes);
-        printf("allocated out of %u Vulkan device memory blocks taking %llu B,\n",
-               budgets[heapIndex].statistics.blockCount,
-               budgets[heapIndex].statistics.blockBytes);
-        printf("Vulkan reports total usage %llu B with budget %llu B.\n",
-               budgets[heapIndex].usage,
-               budgets[heapIndex].budget);
-        
+
         vmaDestroyAllocator(m_allocatorHandle);
     }
 

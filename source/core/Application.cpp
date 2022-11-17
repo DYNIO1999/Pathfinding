@@ -290,7 +290,7 @@ void Application::Draw()
     void Application::CreateVertexBuffer()
     {
         // m_vertexBuffer.allocationHandle
-
+        
         VkBufferCreateInfo bufferCreateInfo1 = VulkanInitializers::BufferCreateInfo(
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE, m_vertices.size() * sizeof(Vertex));
         m_vertexBuffer.allocationHandle = m_allocator->AllocateBuffer(&bufferCreateInfo1, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_vertexBuffer.bufferHandle);
@@ -771,12 +771,8 @@ void Application::Draw()
         
     }
     void Application::TestingAbstraction(){
-        std::shared_ptr<VulkanBuffer> test =  
-        VulkanBuffer::Create(*m_device,*m_allocator)
-                .Type(VulkanBufferType::VERTEX_BUFFER)
-                .Data(testData.data(), sizeof(float) *testData.size())
-                .MapMemory()
-                .Build();
+     APP_ERROR("TESTSING");
+        VulkanBuffer test(*m_device,*m_allocator,VulkanBufferType::VERTEX_BUFFER,testData.data(), sizeof(float)* testData.size());
     
     }
 }
