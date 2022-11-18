@@ -71,7 +71,7 @@ namespace Pathfinding
     void VulkanDevice::CreateLogicalDevice(){
 
         m_deviceExtensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
+        m_deviceExtensions.emplace_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
         m_queueFamilyIndices = FindQueueFamilies(m_physicalDeviceHandle);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
