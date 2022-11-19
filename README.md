@@ -41,23 +41,21 @@ Engine initialization | Boilerplate
         - Vertex Buffer [DONE] [NEED_TO_UPGRADED]
         - Index Buffer [DONE] [NEED_TO_UPGRADED]
         - Uniform Buffer [DONE] [NEED_TO_UPGRADED] 
-# DEADLINE [/17/18]
+
+# DEADLINE [/20/21/22/23]
+    
+    Pathfinding CPU side
     Grid/Scene []
     Objects[]
 
-    
-# DEADLINE [/19/20]
-    Pathfinding CPU side
-    Abstraction/Encapsulation/Refactoring
+
+# DEADLINE [/24/25/26/27/28/29/30/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20]
+    Pathfinding GPU
+    Abstraction/Encapsulation?
         - Graphic Pipeline []??
         - Storage Buffer []
         - Compute Pipeline []     
         - Objects []
-
-
-# DEADLINE [/21/22/23/24/25/26/27/28/29/30/1/2/3/4/5/6/7/8/9/10/11/12/13/14]
-    Pathfinding GPU
-    Abstraction/Encapsulation?
 
 # DEADLINE []
 ImGUI Support
