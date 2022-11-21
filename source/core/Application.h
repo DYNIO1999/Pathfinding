@@ -189,8 +189,16 @@ private:
 
     GridData grid;
     void ResolvePath();
-    void UpdatePath();
-    bool valid = true;
+    
+    bool started{false};
+    glm::vec3 currentPos;
+    glm::vec3 neighbourPos;
+    glm::vec3 differnecePos;
+    float length;
+    glm::vec3 direction;
+
+
+    bool pressed{false};
 };
 }
 #endif

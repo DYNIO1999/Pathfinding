@@ -197,12 +197,47 @@ namespace Pathfinding
             m_obstacles[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_obstacles[i].transform);
         }
 
-        UpdatePath();
+        if(Input::KeyPressedOnce(GLFW_KEY_ESCAPE)){
+            pressed = !pressed;
+        }
+        if(pressed){
+        if(!started){
+        currentPos = m_gridData[m_agents[0].path.front()].position;
+        neighbourPos = m_gridData[*(m_agents[0].path.begin()+1)].position;
+        differnecePos = neighbourPos - currentPos;
+        length = glm::length2(differnecePos);
+        direction = glm::vec3(differnecePos.x / length, differnecePos.y / length, differnecePos.z / length);
+        started =true;
+
+        }else
+        {
+        if(m_agents[0].path.size()>1){
+        currentPos = currentPos + (10.0f * direction * m_deltaTime.AsSeconds());
+        m_agents[0].position = currentPos;
+        m_agents[0].transform = glm::translate(glm::mat4(1), m_agents[0].position);
+        
+        }else{
+            m_agents[0].position = m_gridData[m_agents[0].path.front()].position;
+            m_agents[0].transform = glm::translate(glm::mat4(1), m_agents[0].position);
+
+        }
+
+        float checkDistance = glm::distance2(neighbourPos, currentPos);
+        if ((checkDistance >= 0.0f && checkDistance <= 0.1f) && (m_agents[0].path.size() > 1))
+        {
+
+            APP_ERROR(*m_agents[0].path.begin());
+            m_agents[0].path.erase(m_agents[0].path.begin());
+            started = false;
+        }
+        }        
+        }
+        //
+
         for (size_t i = 0; i < m_agents.size(); i++)
         {
             m_agents[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_agents[i].transform);
         }
-
     }
 
 void Application::Draw()
@@ -836,25 +871,5 @@ void Application::Draw()
             APP_INFO("{}", it);
         }
 
-    }
-    void Application::UpdatePath(){
-
-        if(valid){
-        glm::vec3 currentPos = m_gridData[grid.start].position;
-        glm::vec3 neighbourPos = m_gridData[m_agents[0].path[0]].position;
-        glm::vec3 differnecePos = neighbourPos - currentPos;
-        float length = glm::length2(differnecePos);
-        glm::vec3 direction = glm::vec3(differnecePos.x/length,differnecePos.y/length, differnecePos.z/length);
-        while(valid){
-            currentPos = currentPos + (direction * m_deltaTime.AsSeconds());
-            if((std::abs(currentPos.x) >= std::abs(neighbourPos.x)) && (std::abs(currentPos.y) >= std::abs(neighbourPos.y)) && (std::abs(currentPos.z) >= std::abs(neighbourPos.z)))
-            {
-                m_agents[0].position = currentPos;
-                m_agents[0].transform = glm::translate( glm::mat4(1),m_agents[0].position);
-                m_agents[0].path.erase(m_agents[0].path.begin());
-                valid =false;
-            }
-        }
-        }
     }
 }

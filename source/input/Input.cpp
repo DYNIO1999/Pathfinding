@@ -3,6 +3,8 @@
 #include "../core/Application.h"
 namespace Pathfinding
 {
+    std::unordered_map<int, KeyStatus> Input::s_KeyStatus;
+
     std::pair<int, int> Input::MousePosition(){
         double xpos, ypos;
         auto window = Application::GetWindow();
@@ -23,15 +25,27 @@ namespace Pathfinding
         return status == GLFW_PRESS || status == GLFW_REPEAT;
     }
     int Input::s_oldKeyStatus = GLFW_RELEASE;
-
+    int Input::s_currentKey=0;
     bool Input::KeyPressedOnce(int key){
         bool state =false;
         auto window = Application::GetWindow();
+        
         int status = glfwGetKey(window->GetWindowHandle(), key);
+        if(s_KeyStatus.find(key) !=s_KeyStatus.end()){
+            auto it = s_KeyStatus.find(key);
+            s_oldKeyStatus = it->second.keyPressed;
+            APP_ERROR("CHECK");
+        }
         if( status== GLFW_RELEASE && s_oldKeyStatus ==GLFW_PRESS){
             state = true;
         }
-        s_oldKeyStatus = status;
+        if(s_KeyStatus.find(key) !=s_KeyStatus.end()){
+            auto it = s_KeyStatus.find(key);
+            it->second.keyPressed = status;
+        }else{
+            s_KeyStatus.insert(std::pair <int,KeyStatus>(status,KeyStatus{status}));
+        }
+
         return state;
     }
 }

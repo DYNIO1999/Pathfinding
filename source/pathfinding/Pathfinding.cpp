@@ -42,12 +42,12 @@ namespace Pathfinding{
                 path.clear();
                 int currentIDBack = grid.end;
 
-                path.push_back(grid.start);
                 while ((currentIDBack != -1) && (currentIDBack != grid.start))
                 {
                     path.push_back(currentIDBack);
                     currentIDBack = grid.nodes[currentIDBack].nodeType;
                 }
+                path.push_back(grid.start);
                 //path.erase(path.begin());
                 break;
             }
