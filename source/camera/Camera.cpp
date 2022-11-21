@@ -18,11 +18,21 @@ namespace Pathfinding
       float velocity = movementSpeed * dt;
       if (Input::KeyPressed(GLFW_KEY_W))
       {
-          m_position += m_front * velocity;
+          if (state){
+              m_position -= (glm::vec3(0.0f, 0.0f, 1.0f) * velocity);
+          }
+          else{
+              m_position += m_front * velocity;
+          }
       }
       if (Input::KeyPressed(GLFW_KEY_S))
       {
-          m_position -= m_front * velocity;
+        if(state){
+            m_position += (glm::vec3(0.0f,0.0f,1.0f)* velocity);
+        }
+        else{  
+            m_position -= m_front * velocity;
+        }
       }
 
       if (Input::KeyPressed(GLFW_KEY_A))

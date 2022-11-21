@@ -197,10 +197,12 @@ namespace Pathfinding
             m_obstacles[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_obstacles[i].transform);
         }
 
+        UpdatePath();
         for (size_t i = 0; i < m_agents.size(); i++)
         {
             m_agents[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_agents[i].transform);
         }
+
     }
 
 void Application::Draw()
@@ -271,18 +273,17 @@ void Application::Draw()
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer->BufferHandle(), &offset);
         vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->BufferHandle(),0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 0, 1, &m_cameraData.descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
-
         for (size_t i = 0; i < m_gridData.size(); i++)
         {
             
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_gridData[i].color;
-            
             for(auto& it: m_agents[0].path){
                  if(m_gridData[i].index == it){
                      pushConstant.color = m_agents[0].color;
                  }
             }
+           
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1,&m_gridData[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
@@ -835,5 +836,25 @@ void Application::Draw()
             APP_INFO("{}", it);
         }
 
+    }
+    void Application::UpdatePath(){
+
+        if(valid){
+        glm::vec3 currentPos = m_gridData[grid.start].position;
+        glm::vec3 neighbourPos = m_gridData[m_agents[0].path[0]].position;
+        glm::vec3 differnecePos = neighbourPos - currentPos;
+        float length = glm::length2(differnecePos);
+        glm::vec3 direction = glm::vec3(differnecePos.x/length,differnecePos.y/length, differnecePos.z/length);
+        while(valid){
+            currentPos = currentPos + (direction * m_deltaTime.AsSeconds());
+            if((std::abs(currentPos.x) >= std::abs(neighbourPos.x)) && (std::abs(currentPos.y) >= std::abs(neighbourPos.y)) && (std::abs(currentPos.z) >= std::abs(neighbourPos.z)))
+            {
+                m_agents[0].position = currentPos;
+                m_agents[0].transform = glm::translate( glm::mat4(1),m_agents[0].position);
+                m_agents[0].path.erase(m_agents[0].path.begin());
+                valid =false;
+            }
+        }
+        }
     }
 }

@@ -189,6 +189,8 @@ private:
 
     GridData grid;
     void ResolvePath();
+    void UpdatePath();
+    bool valid = true;
 };
 }
 #endif
