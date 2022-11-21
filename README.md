@@ -41,9 +41,9 @@ Engine initialization | Boilerplate
         - Vertex Buffer [DONE] [NEED_TO_UPGRADED]
         - Index Buffer [DONE] [NEED_TO_UPGRADED]
         - Uniform Buffer [DONE] [NEED_TO_UPGRADED] 
+    Switched to OpenGL View [DONE]
 
-# DEADLINE [/20/21/22/23]
-    
+# DEADLINE [/22/23]
     Pathfinding CPU side
     Grid/Scene []
     Objects[]

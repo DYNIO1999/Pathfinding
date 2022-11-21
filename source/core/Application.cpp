@@ -36,8 +36,9 @@ namespace Pathfinding
         
         BuildComputeCommands();
         CalculateCompute();
-
-        TestingAbstraction();
+        ResolvePath();
+        
+        
         // Init Vulkan
         while (m_window->IsOpen())
         {
@@ -100,9 +101,12 @@ namespace Pathfinding
 
         auto [width,height] = Application::GetWindow()->WindowSize();
         m_camera = std::make_unique<Camera>(static_cast<float>(width), static_cast<float>(height));
-
+        
+        
+        //
+        InitGrids();
         InitObjects(); //Geometry initialization such as vertices and indices
-
+        //
 
         m_vertexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::VERTEX_BUFFER, m_vertices.data(), sizeof(Vertex) * m_vertices.size());
         m_indexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::INDEX_BUFFER, m_indices.data(), sizeof(u_int32_t) * m_indices.size());
@@ -250,9 +254,9 @@ void Application::Draw()
 
         VkViewport viewport{};
         viewport.x = 0.0f;
-        viewport.y = 0.0f;
+        viewport.y = static_cast<float>(m_swapchain->Extent().height);
         viewport.width = static_cast<float>(m_swapchain->Extent().width);
-        viewport.height = static_cast<float>(m_swapchain->Extent().height);
+        viewport.height = -static_cast<float>(m_swapchain->Extent().height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         VkRect2D scissor{{0, 0}, m_swapchain->Extent()};
@@ -274,6 +278,11 @@ void Application::Draw()
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_gridData[i].color;
             
+            for(auto& it: m_agents[0].path){
+                 if(m_gridData[i].index == it){
+                     pushConstant.color = m_agents[0].color;
+                 }
+            }
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1,&m_gridData[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
@@ -284,7 +293,7 @@ void Application::Draw()
 
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_obstacles[i].color;
-
+            
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1, &m_obstacles[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
@@ -295,7 +304,6 @@ void Application::Draw()
 
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_agents[i].color;
-
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1, &m_agents[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
@@ -336,45 +344,42 @@ void Application::Draw()
 
                 
         m_gridData.resize(GRID_SIZE);
+        //Grid
         glm::mat4 model = glm::mat4(1);
-        size_t index =0;
-
+        size_t indexTemp = 0;
         for(size_t i =0;i<GRID_ROW;i++){
             for(size_t j =0;j<GRID_COLUMN;j++){
-
                 glm::mat4 transform = glm::translate(model, glm::vec3(4.0f * i, 0.0f, -4.0f*j));
-                m_gridData[index].position = glm::vec3(4.0f * i, 0.0f, -4.0f*j);
+                m_gridData[indexTemp].position = glm::vec3(4.0f * i, 0.0f, -4.0f * j);
                 transform = glm::scale(transform, glm::vec3(1.0, 0.5, 1.0));
-                m_gridData[index].transform = transform;
-                m_gridData[index].index=index;
-                index++;
+                m_gridData[indexTemp].transform = transform;
+                m_gridData[indexTemp].index = indexTemp;
+                indexTemp++;
             }
         }
+        //
 
-
-        //TESTING
-        m_obstacles.resize(3);
-
-        m_obstacles[0].position = m_gridData[8].position;
-        m_obstacles[0].transform  = glm::translate(glm::mat4(1),  m_obstacles[0].position+glm::vec3(0.0f,1.5f,0.0f));
-        
-        m_obstacles[1].position = m_gridData[12].position;
-        m_obstacles[1].transform  = glm::translate(glm::mat4(1),  m_obstacles[1].position+glm::vec3(0.0f,1.5f,0.0f));
-        
-        m_obstacles[2].position = m_gridData[22].position;
-        m_obstacles[2].transform = glm::translate(glm::mat4(1), m_obstacles[2].position + glm::vec3(0.0f, 1.5f, 0.0f));
-
-        m_agents.resize(2);
+        //Obstacle
+        m_obstacles.resize(m_obstaclesIndexes.size());
+        size_t currentObstacleIndex=0;
+        for(auto& index: m_obstaclesIndexes){
+            m_obstacles[currentObstacleIndex].position = m_gridData[index].position;
+            m_obstacles[currentObstacleIndex].transform = glm::translate(glm::mat4(1), m_obstacles[currentObstacleIndex].position + glm::vec3(0.0f, 1.5f, 0.0f));
+            currentObstacleIndex++;
+        }
+        //
+      
+        m_agents.resize(1);
         for (int i = 0; i < m_agents.size(); i++)
         {
             m_agents[i].color = glm::vec4{0.96, 0.0 + (0.1f * (float)i), 0.09, 1.0f};
         }
 
-        m_agents[0].position = m_gridData[0].position;
+        m_agents[0].position = m_gridData[AStar::FindIndex(0,0)].position;
         m_agents[0].transform = glm::translate(glm::mat4(1), m_agents[0].position + glm::vec3(0.0f, 1.5f, 0.0f));
 
-        m_agents[1].position = m_gridData[20].position;
-        m_agents[1].transform = glm::translate(glm::mat4(1), m_agents[1].position + glm::vec3(0.0f, 1.5f, 0.0f));
+        //m_agents[1].position = m_gridData[AStar::FindIndex(0,1)].position;
+        //m_agents[1].transform = glm::translate(glm::mat4(1), m_agents[1].position + glm::vec3(0.0f, 1.5f, 0.0f));
     
         //TESTING
     }
@@ -730,20 +735,105 @@ void Application::Draw()
         }
         int* it =(int*)m_ssbObjects[0].buffer.data;
         for(int i=0;i<10;i++){
-            APP_ERROR("{} ", *it);
+            //APP_ERROR("{} ", *it); Commented just for testing CPU Pathfinding
             it= it+1;
         }
         APP_ERROR("-----------RESULT-------------");
         int* it2 =(int*)m_ssbObjects[1].buffer.data;
         for(int i=0;i<10;i++){
-            APP_WARN("{} ", *it2);
+            // APP_WARN("{} ", *it2); Commented just for testing CPU Pathfinding
             it2 = it2 + 1;
         }
         
     }
 
-    void Application::TestingAbstraction()
+    void Application::InitGrids()
     {
-        APP_ERROR("TESTSING");
+        grid.start = AStar::FindIndex(0, 0);
+        grid.end = AStar::FindIndex(4, 4);
+
+        for (int i = 0; i < GRID_ROW; i++)
+        {
+            for (int j = 0; j < GRID_COLUMN; j++)
+            {
+                int index = AStar::FindIndex(i, j);
+                grid.nodes[index].previousNode = -1;
+                grid.nodes[index].i = i;
+                grid.nodes[index].j = j;
+                grid.nodes[index].ID = index;
+
+                grid.nodes[index].Fcost = 0.0f;
+                grid.nodes[index].Hcost = 0.0f;
+                grid.nodes[index].Gcost = 0.0f;
+                if((i>0) && (i<GRID_ROW-1) && (j>0)&& (j<GRID_COLUMN-1)){
+                    if (((i +j) %2) == 0)
+                    {
+                        grid.nodes[index].nodeType = IMPASSABLE_NODE;
+                        m_obstaclesIndexes.push_back(index);          
+                    }
+                } 
+                else
+                {
+                    grid.nodes[index].nodeType = PASSABLE_NODE;
+                }
+
+                for (int i = 0; i < 8; i++)
+                {
+                    grid.nodes[index].neighbours[i] = -1;
+                }
+
+                if (i < GRID_ROW - 1)
+                {
+                    grid.nodes[index].neighbours[0] = AStar::FindIndex(i + 1, j);
+                }
+                if (i > 0)
+                {
+                    grid.nodes[index].neighbours[1] = AStar::FindIndex(i - 1, j);
+                }
+                if (j < GRID_COLUMN - 1)
+                {
+                    grid.nodes[index].neighbours[2] = AStar::FindIndex(i, j + 1);
+                }
+                if (j > 0)
+                {
+                    grid.nodes[index].neighbours[3] = AStar::FindIndex(i, j - 1);
+                }
+
+                if ((i < GRID_ROW - 1) && (j < GRID_COLUMN - 1))
+                {
+                    grid.nodes[index].neighbours[4] = AStar::FindIndex(i + 1, j + 1);
+                }
+
+                if ((i < GRID_ROW - 1) && (j > 0))
+                {
+                    grid.nodes[index].neighbours[5] = AStar::FindIndex(i + 1, j - 1);
+                }
+
+                if ((i > 0) && (j > 0))
+                {
+                    grid.nodes[index].neighbours[6] = AStar::FindIndex(i - 1, j - 1);
+                }
+
+                if ((i > 0) && (j < GRID_COLUMN - 1))
+                {
+                    grid.nodes[index].neighbours[7] = AStar::FindIndex(i - 1, j + 1);
+                }
+            }
+        }        
+    }
+
+    void Application::ResolvePath(){
+
+        auto result = AStar::FindPath(grid);
+        m_agents[0].path = result;
+        for (auto &it : result)
+        {
+            APP_ERROR("{}", it);
+        }
+        APP_INFO("INDEXES OF OBSTACLES");
+        for(auto &it: m_obstaclesIndexes){
+            APP_INFO("{}", it);
+        }
+
     }
 }

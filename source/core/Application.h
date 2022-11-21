@@ -22,12 +22,9 @@
 
 #include "camera/Camera.h"
 #include "../renderer/VulkanBuffer.h"
+#include "../pathfinding/Pathfinding.h"
 
 namespace Pathfinding{
-
-constexpr size_t GRID_ROW =5;
-constexpr size_t GRID_COLUMN =5;
-constexpr size_t GRID_SIZE =GRID_ROW*GRID_COLUMN;
 
 struct VulkanBufferTest{
     VkBuffer bufferHandle = VK_NULL_HANDLE;
@@ -75,6 +72,7 @@ struct AgentGraphicData{
 
     VkDescriptorSet descriptors[2];
     std::unique_ptr<VulkanBuffer> modelUBOs[2];
+    std::vector<int> path;
 };
 
 
@@ -180,12 +178,17 @@ private:
 
    
     //Testing
-    void TestingAbstraction();
 
-
+    std::vector<int> m_obstaclesIndexes;
     std::vector<ObstacleGraphicData> m_obstacles;
     std::vector<AgentGraphicData> m_agents;
 
+    //void TestingAbstraction();
+    void InitGrids();
+
+
+    GridData grid;
+    void ResolvePath();
 };
 }
 #endif
