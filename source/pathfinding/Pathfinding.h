@@ -7,7 +7,7 @@ namespace Pathfinding
 
     constexpr size_t GRID_ROW = 25;
     constexpr size_t GRID_COLUMN = 25;
-    constexpr size_t NUMBER_OF_AGENTS =GRID_ROW/2;
+    constexpr size_t NUMBER_OF_AGENTS =GRID_ROW/3;
     
     constexpr int NORMAL_COST =10;
     constexpr int DIAGONAL_COST =14;

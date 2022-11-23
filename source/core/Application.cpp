@@ -379,20 +379,21 @@ void Application::Draw()
             currentObstacleIndex++;
         }
         //
-      
+
+        std::vector<float> randomColors;
+        for(int c=0;c<=255;c+=NUMBER_OF_AGENTS){
+            randomColors.push_back(c);
+        }
+        std::random_shuffle(randomColors.begin(), randomColors.end());
+
         m_agents.resize(NUMBER_OF_AGENTS);
         for (int i = 0; i < m_agents.size(); i++)
         {
-            m_agents[i].color = glm::vec4{0.96, 0.0 + (0.1f * (float)i), 0.09, 1.0f};
+            m_agents[i].color = glm::vec4(((float)randomColors[m_agents.size()-1-i])/255.0f,((float)randomColors[i+1])/255.0f,((float)randomColors[i])/255.0f,1.0f);
             m_agents[i].position = m_gridData[m_grid[i].start].position;
             m_agents[i].transform = glm::translate(glm::mat4(1), m_agents[i].position + glm::vec3(0.0f, 1.5f, 0.0f));
         }
 
-
-        //m_agents[1].position = m_gridData[AStar::FindIndex(0,1)].position;
-        //m_agents[1].transform = glm::translate(glm::mat4(1), m_agents[1].position + glm::vec3(0.0f, 1.5f, 0.0f));
-    
-        //TESTING
     }
     void Application::CreateDescriptorPool()
     {
@@ -776,7 +777,7 @@ void Application::Draw()
                 grid.nodes[index].Hcost = 0.0f;
                 grid.nodes[index].Gcost = 0.0f;
                 if((i>0) && (i<GRID_ROW-1) && (j>=0)&& (j<GRID_COLUMN)){
-                    if ((rand()%4) == 0)
+                    if ((rand()%3) == 0)
                     {
                         grid.nodes[index].passable = false;
                         m_obstaclesIndexes.push_back(index);          
@@ -841,9 +842,10 @@ void Application::Draw()
 
         for(int k=0;k<NUMBER_OF_AGENTS;k++){
            m_grid.push_back(grid);
-           int randomNumber = randomNumbers[k];
-           m_grid[k].start = AStar::FindIndex(0,randomNumber);
-           m_grid[k].end = AStar::FindIndex(GRID_ROW-1, randomNumber);      
+           int firstNumber = randomNumbers[k];
+           int secondNumber = randomNumbers[randomNumbers.size()-1-k];
+           m_grid[k].start = AStar::FindIndex(0,firstNumber);
+           m_grid[k].end = AStar::FindIndex(GRID_ROW-1, secondNumber);      
         }
     }
 
@@ -852,6 +854,6 @@ void Application::Draw()
         for(int k=0;k<NUMBER_OF_AGENTS;k++){
             auto result = AStar::FindPath(m_grid[k]);    
             m_agents[k].path = result;
-        }  
+        }
     }
 }
