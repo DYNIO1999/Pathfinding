@@ -59,7 +59,7 @@ namespace Pathfinding
       rotX = rotX *mouseSensitivity;
       rotY = rotY * mouseSensitivity;
 
-     auto result = Input::KeyPressedOnce(GLFW_KEY_SPACE);
+     auto result = Input::KeyPressedOnce(GLFW_KEY_ESCAPE);
      if(result){
         state = !state;
      }

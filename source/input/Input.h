@@ -14,7 +14,6 @@ struct KeyStatus {
 class Input
 {
 public:
-    static int s_oldKeyStatus;
     static int s_currentKey;
     static std::pair<int,int> MousePosition();
     static bool MouseButtonPressed(int button);

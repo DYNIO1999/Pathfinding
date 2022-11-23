@@ -197,9 +197,10 @@ namespace Pathfinding
             m_obstacles[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_obstacles[i].transform);
         }
 
-        if(Input::KeyPressedOnce(GLFW_KEY_ESCAPE)){
+        if(Input::KeyPressedOnce(GLFW_KEY_SPACE)){
             pressed = !pressed;
         }
+
         if(pressed){
         if(!started){
         currentPos = m_gridData[m_agents[0].path.front()].position;

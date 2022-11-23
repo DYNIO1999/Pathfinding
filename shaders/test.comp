@@ -9,7 +9,6 @@ int size = 10;
 int old_size =10;
 
 
-
 void remove_element(int value){
 	bool found =false;	
 	int indexToRemove = -1;
