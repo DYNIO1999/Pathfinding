@@ -16,7 +16,7 @@ namespace Pathfinding{
     }
 
 
-    std::vector<int> AStar::FindPath(GridData &grid){
+    std::vector<int> AStar::FindPath(GridData& grid){
         std::vector<int> path;
 
         std::vector<int> toSearchNodes = {grid.start};
@@ -45,7 +45,7 @@ namespace Pathfinding{
                 while ((currentIDBack != -1) && (currentIDBack != grid.start))
                 {
                     path.push_back(currentIDBack);
-                    currentIDBack = grid.nodes[currentIDBack].nodeType;
+                    currentIDBack = grid.nodes[currentIDBack].previousNode;
                 }
                 path.push_back(grid.start);
                 //path.erase(path.begin());
@@ -63,11 +63,11 @@ namespace Pathfinding{
                     foundInProcessed = true;
                 }
 
-                if ((neighbour != -1) && (!foundInProcessed) && grid.nodes[neighbour].nodeType)
+                if ((neighbour != -1) && (!foundInProcessed) && grid.nodes[neighbour].passable)
                 {
-
+                    
+                    
                     int costToNeighbour = grid.nodes[currentNode].Gcost + CalculateDistance(grid.nodes[currentNode].i, grid.nodes[currentNode].j, grid.nodes[neighbour].i, grid.nodes[neighbour].j);
-
                     bool found = false;
                     auto check = std::find(toSearchNodes.begin(), toSearchNodes.end(), neighbour);
                     if (check != toSearchNodes.end())
@@ -78,7 +78,7 @@ namespace Pathfinding{
                     if ((costToNeighbour < grid.nodes[neighbour].Gcost) || (!found))
                     {
                         grid.nodes[neighbour].Gcost = costToNeighbour;
-                        grid.nodes[neighbour].nodeType = currentNode;
+                        grid.nodes[neighbour].previousNode = currentNode;
                         grid.nodes[neighbour].Hcost = CalculateDistance(grid.nodes[neighbour].i, grid.nodes[neighbour].j, grid.nodes[grid.end].i, grid.nodes[grid.end].j);
                         grid.nodes[neighbour].Fcost = grid.nodes[neighbour].Gcost + grid.nodes[neighbour].Hcost;
 

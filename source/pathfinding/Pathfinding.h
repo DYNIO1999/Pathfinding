@@ -5,19 +5,14 @@
 namespace Pathfinding
 {
 
-    constexpr size_t GRID_ROW = 5;
-    constexpr size_t GRID_COLUMN = 5;
-    constexpr size_t NUMBER_OF_AGENTS =1;
+    constexpr size_t GRID_ROW = 25;
+    constexpr size_t GRID_COLUMN = 25;
+    constexpr size_t NUMBER_OF_AGENTS =GRID_ROW/2;
     
     constexpr int NORMAL_COST =10;
     constexpr int DIAGONAL_COST =14;
 
     constexpr size_t GRID_SIZE = GRID_ROW * GRID_COLUMN;
-
-    enum NODE_TYPE{
-        IMPASSABLE_NODE =0,
-        PASSABLE_NODE =1
-    };
 
     struct Node
     {
@@ -27,7 +22,7 @@ namespace Pathfinding
         float Fcost; // GCost + HCost
         float Hcost; // Distance to End Node
         float Gcost; // Distance to Start Node
-        int nodeType; //Passable or Impassable
+        bool passable; //Passable or Impassable
         int ID;
         int neighbours[8];
     };

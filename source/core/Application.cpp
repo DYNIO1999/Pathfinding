@@ -202,36 +202,9 @@ namespace Pathfinding
         }
 
         if(pressed){
-        if(!started){
-        currentPos = m_gridData[m_agents[0].path.front()].position;
-        neighbourPos = m_gridData[*(m_agents[0].path.begin()+1)].position;
-        differnecePos = neighbourPos - currentPos;
-        length = glm::length2(differnecePos);
-        direction = glm::vec3(differnecePos.x / length, differnecePos.y / length, differnecePos.z / length);
-        started =true;
-
-        }else
-        {
-        if(m_agents[0].path.size()>1){
-        currentPos = currentPos + (10.0f * direction * m_deltaTime.AsSeconds());
-        m_agents[0].position = currentPos;
-        m_agents[0].transform = glm::translate(glm::mat4(1), m_agents[0].position);
-        
-        }else{
-            m_agents[0].position = m_gridData[m_agents[0].path.front()].position;
-            m_agents[0].transform = glm::translate(glm::mat4(1), m_agents[0].position);
-
-        }
-
-        float checkDistance = glm::distance2(neighbourPos, currentPos);
-        if ((checkDistance >= 0.0f && checkDistance <= 0.1f) && (m_agents[0].path.size() > 1))
-        {
-
-            APP_ERROR(*m_agents[0].path.begin());
-            m_agents[0].path.erase(m_agents[0].path.begin());
-            started = false;
-        }
-        }        
+            for(auto& it: m_agents){
+                it.Update(m_gridData, m_deltaTime.AsSeconds());
+            }
         }
         //
 
@@ -314,12 +287,13 @@ void Application::Draw()
             
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_gridData[i].color;
-            for(auto& it: m_agents[0].path){
+            for(int k =0;k<NUMBER_OF_AGENTS;k++){
+            for(auto& it: m_agents[k].path){
                  if(m_gridData[i].index == it){
-                     pushConstant.color = m_agents[0].color;
+                     pushConstant.color = m_agents[k].color;
                  }
             }
-           
+            }
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1,&m_gridData[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
@@ -406,14 +380,14 @@ void Application::Draw()
         }
         //
       
-        m_agents.resize(1);
+        m_agents.resize(NUMBER_OF_AGENTS);
         for (int i = 0; i < m_agents.size(); i++)
         {
             m_agents[i].color = glm::vec4{0.96, 0.0 + (0.1f * (float)i), 0.09, 1.0f};
+            m_agents[i].position = m_gridData[m_grid[i].start].position;
+            m_agents[i].transform = glm::translate(glm::mat4(1), m_agents[i].position + glm::vec3(0.0f, 1.5f, 0.0f));
         }
 
-        m_agents[0].position = m_gridData[AStar::FindIndex(0,0)].position;
-        m_agents[0].transform = glm::translate(glm::mat4(1), m_agents[0].position + glm::vec3(0.0f, 1.5f, 0.0f));
 
         //m_agents[1].position = m_gridData[AStar::FindIndex(0,1)].position;
         //m_agents[1].transform = glm::translate(glm::mat4(1), m_agents[1].position + glm::vec3(0.0f, 1.5f, 0.0f));
@@ -425,14 +399,14 @@ void Application::Draw()
         VkDescriptorPoolSize poolSize{};
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         //poolSize.descriptorCount = 2 + (m_gridData.size() * 2);
-        poolSize.descriptorCount = 1000;
+        poolSize.descriptorCount = 10000;
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
         poolInfo.pPoolSizes = &poolSize;
         //poolInfo.maxSets = 2 + (m_gridData.size()*2);
-        poolInfo.maxSets = 1000;
+        poolInfo.maxSets = 10000;
 
         VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->LogicalDeviceHandle(), &poolInfo, nullptr, &m_descriptorPool));
     }
@@ -786,9 +760,8 @@ void Application::Draw()
 
     void Application::InitGrids()
     {
-        grid.start = AStar::FindIndex(0, 0);
-        grid.end = AStar::FindIndex(4, 4);
-
+        GridData grid;
+        srand(time(nullptr));
         for (int i = 0; i < GRID_ROW; i++)
         {
             for (int j = 0; j < GRID_COLUMN; j++)
@@ -802,16 +775,18 @@ void Application::Draw()
                 grid.nodes[index].Fcost = 0.0f;
                 grid.nodes[index].Hcost = 0.0f;
                 grid.nodes[index].Gcost = 0.0f;
-                if((i>0) && (i<GRID_ROW-1) && (j>0)&& (j<GRID_COLUMN-1)){
-                    if (((i +j) %2) == 0)
+                if((i>0) && (i<GRID_ROW-1) && (j>=0)&& (j<GRID_COLUMN)){
+                    if ((rand()%4) == 0)
                     {
-                        grid.nodes[index].nodeType = IMPASSABLE_NODE;
+                        grid.nodes[index].passable = false;
                         m_obstaclesIndexes.push_back(index);          
+                    }else{
+                    grid.nodes[index].passable = true;
                     }
                 } 
                 else
                 {
-                    grid.nodes[index].nodeType = PASSABLE_NODE;
+                    grid.nodes[index].passable = true;
                 }
 
                 for (int i = 0; i < 8; i++)
@@ -856,21 +831,27 @@ void Application::Draw()
                     grid.nodes[index].neighbours[7] = AStar::FindIndex(i - 1, j + 1);
                 }
             }
-        }        
+        }
+
+        std::vector<int> randomNumbers;
+        for(int i=0;i<GRID_COLUMN;i++){
+            randomNumbers.emplace_back(i);
+        }
+        std::random_shuffle(randomNumbers.begin(), randomNumbers.end());
+
+        for(int k=0;k<NUMBER_OF_AGENTS;k++){
+           m_grid.push_back(grid);
+           int randomNumber = randomNumbers[k];
+           m_grid[k].start = AStar::FindIndex(0,randomNumber);
+           m_grid[k].end = AStar::FindIndex(GRID_ROW-1, randomNumber);      
+        }
     }
 
     void Application::ResolvePath(){
-
-        auto result = AStar::FindPath(grid);
-        m_agents[0].path = result;
-        for (auto &it : result)
-        {
-            APP_ERROR("{}", it);
-        }
-        APP_INFO("INDEXES OF OBSTACLES");
-        for(auto &it: m_obstaclesIndexes){
-            APP_INFO("{}", it);
-        }
-
+        Timer cpuPathfindingTimer(true, "CPU Pathfinding");
+        for(int k=0;k<NUMBER_OF_AGENTS;k++){
+            auto result = AStar::FindPath(m_grid[k]);    
+            m_agents[k].path = result;
+        }  
     }
 }

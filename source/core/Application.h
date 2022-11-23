@@ -24,8 +24,11 @@
 #include "../renderer/VulkanBuffer.h"
 #include "../pathfinding/Pathfinding.h"
 
+#include <unordered_set>
+
 namespace Pathfinding{
 
+constexpr float SPEED =50.0f;
 struct VulkanBufferTest{
     VkBuffer bufferHandle = VK_NULL_HANDLE;
     VmaAllocation allocationHandle;
@@ -73,6 +76,45 @@ struct AgentGraphicData{
     VkDescriptorSet descriptors[2];
     std::unique_ptr<VulkanBuffer> modelUBOs[2];
     std::vector<int> path;
+    void Update(std::vector<ModelData>& gridGraphicsData, float dt){
+        if (!started)
+        {
+            currentPos = gridGraphicsData[path.front()].position;
+            neighbourPos = gridGraphicsData[*(path.begin() + 1)].position;
+            differnecePos = neighbourPos - currentPos;
+            length = glm::length2(differnecePos);
+            direction = glm::vec3(differnecePos.x / length, differnecePos.y / length, differnecePos.z / length);
+            started = true;
+        }
+        else
+        {
+            if (path.size() > 1)
+            {
+                currentPos = currentPos + (SPEED * direction * dt);
+                position = currentPos + glm::vec3(0.0f, 1.5f, 0.0f);
+                transform = glm::translate(glm::mat4(1), position);
+            }
+            else
+            {
+                position = gridGraphicsData[path.front()].position + glm::vec3(0.0f, 1.5f, 0.0f);
+                transform = glm::translate(glm::mat4(1), position);
+            }
+
+            float checkDistance = glm::distance2(neighbourPos, currentPos);
+            if ((checkDistance >= 0.0f && checkDistance <= 0.1f) && (path.size() > 1))
+            {
+
+                path.erase(path.begin());
+                started = false;
+            }
+        }
+    }
+    bool started{false};
+    glm::vec3 currentPos;
+    glm::vec3 neighbourPos;
+    glm::vec3 differnecePos;
+    float length;
+    glm::vec3 direction;
 };
 
 
@@ -187,17 +229,8 @@ private:
     void InitGrids();
 
 
-    GridData grid;
+    std::vector<GridData> m_grid;
     void ResolvePath();
-    
-    bool started{false};
-    glm::vec3 currentPos;
-    glm::vec3 neighbourPos;
-    glm::vec3 differnecePos;
-    float length;
-    glm::vec3 direction;
-
-
     bool pressed{false};
 };
 }
