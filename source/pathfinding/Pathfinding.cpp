@@ -63,7 +63,7 @@ namespace Pathfinding{
                     foundInProcessed = true;
                 }
 
-                if ((neighbour != -1) && (!foundInProcessed) && grid.nodes[neighbour].passable)
+                if ((neighbour != -1) && (!foundInProcessed) && (grid.nodes[neighbour].passable==1))
                 {
                     
                     

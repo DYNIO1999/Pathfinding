@@ -634,23 +634,23 @@ void Application::Draw()
     }
 
     void Application::CreateComputeStorageBuffers(){
-        VkDeviceSize bufferSize = sizeof(int) *10;
-        
-        
-        VkMemoryAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.pNext = nullptr;
-        allocInfo.allocationSize = 0;
-        allocInfo.memoryTypeIndex = 0;
+        VkDeviceSize bufferSize = sizeof(GridData);
+        VkDeviceSize bufferSize2 = sizeof(Path);
+        APP_ERROR("SIZE : {}", bufferSize);
         VkBufferCreateInfo bufferInfo = {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         bufferInfo.size = bufferSize;
 
+        VkBufferCreateInfo bufferInfo2 = {};
+        bufferInfo2.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo2.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        bufferInfo2.size = bufferSize2;
+        
         m_ssbObjects[0].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_ssbObjects[0].buffer.bufferHandle);
         m_ssbObjects[0].buffer.data = m_allocator->MapMemory(m_ssbObjects[0].buffer.allocationHandle);
 
-        m_ssbObjects[1].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_ssbObjects[1].buffer.bufferHandle);
+        m_ssbObjects[1].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo2, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_ssbObjects[1].buffer.bufferHandle);
         m_ssbObjects[1].buffer.data = m_allocator->MapMemory(m_ssbObjects[1].buffer.allocationHandle);
     }
 
@@ -713,48 +713,43 @@ void Application::Draw()
         vkCmdBindPipeline(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipeline);
         vkCmdBindDescriptorSets(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayoutCompute, 0, 1, &m_ssbObjects[0].descriptor, 0, nullptr);
         vkCmdBindDescriptorSets(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayoutCompute, 1, 1, &m_ssbObjects[1].descriptor, 0, nullptr);
-        vkCmdDispatch(m_computeCommandBuffer, 10, 1, 1);                                                                                          
+        vkCmdDispatch(m_computeCommandBuffer, 1, 1, 1);                                                                                          
         if (vkEndCommandBuffer(m_computeCommandBuffer) != VK_SUCCESS)                                                                              
         {
             APP_ERROR("failed to end command buffer");
         }
 
         
-        std::vector<int> temp;
-        temp.resize(10);
-        int index =1;
-        for(auto& it: temp){
-            it= index++;
-        }
-        memcpy(m_ssbObjects[0].buffer.data, temp.data(), sizeof(int) * 10);
+        GridData* grid = new GridData;
+        *grid = m_grid[0]; 
+        memcpy(m_ssbObjects[0].buffer.data, grid, sizeof(GridData));
 
-        for(auto& it: temp){
-            it =0;
+
+        Path* testPath = new Path;
+        for(int i=0;i<GRID_SIZE;i++){
+            testPath->pathList[i] =-1;
         }
-        memcpy(m_ssbObjects[1].buffer.data, temp.data(), sizeof(int) * 10);
+        memcpy(m_ssbObjects[1].buffer.data, testPath, sizeof(Path));
     }
 
     void Application::CalculateCompute(){
         {
-        Timer time(true);
+     
         VkSubmitInfo submitInfo2 = {};
         submitInfo2.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo2.commandBufferCount = 1;
         submitInfo2.pCommandBuffers = &m_computeCommandBuffer;
-
-        vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo2, VK_NULL_HANDLE); 
+        
+        Timer time(true, "GPU Pathfinding");
+        vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo2, VK_NULL_HANDLE);
         vkQueueWaitIdle(m_device->GraphicsQueueHandle());
         }
-        int* it =(int*)m_ssbObjects[0].buffer.data;
-        for(int i=0;i<10;i++){
-            //APP_ERROR("{} ", *it); Commented just for testing CPU Pathfinding
-            it= it+1;
-        }
+
         APP_ERROR("-----------RESULT-------------");
-        int* it2 =(int*)m_ssbObjects[1].buffer.data;
-        for(int i=0;i<10;i++){
+        Path* path =(Path*)m_ssbObjects[1].buffer.data;
+        for(int i=0;i<GRID_SIZE;i++){
             // APP_WARN("{} ", *it2); Commented just for testing CPU Pathfinding
-            it2 = it2 + 1;
+            APP_INFO("{}", path->pathList[i]);
         }
         
     }
@@ -779,15 +774,15 @@ void Application::Draw()
                 if((i>0) && (i<GRID_ROW-1) && (j>=0)&& (j<GRID_COLUMN)){
                     if ((rand()%3) == 0)
                     {
-                        grid.nodes[index].passable = false;
+                        grid.nodes[index].passable = 0;
                         m_obstaclesIndexes.push_back(index);          
                     }else{
-                    grid.nodes[index].passable = true;
+                    grid.nodes[index].passable = 1;
                     }
                 } 
                 else
                 {
-                    grid.nodes[index].passable = true;
+                    grid.nodes[index].passable = 1;
                 }
 
                 for (int i = 0; i < 8; i++)

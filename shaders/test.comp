@@ -1,65 +1,230 @@
 #version 450
 #extension GL_EXT_debug_printf : enable
 
-layout(std430, set=0, binding=0) buffer inA { int test1[]; };
-layout(std430, set=1, binding=0) buffer outB { int test2[]; };
+const int GRID_SIZE = 25;
+uint index =0;
+struct Node{
+	int i;
+	int j;
+	int previousNode;
+	float Fcost; 
+	float Hcost; 
+	float Gcost; 
+	int passable; 
+	int ID;
+	int neighbours[8];
+};
 
-layout (local_size_x = 1) in;
-int size = 10;		
-int old_size =10;
+struct Grid{
+    int start;
+    int end;
+	Node nodes[GRID_SIZE];
+};
+
+struct Path{
+    int pathList[GRID_SIZE];
+};
 
 
-void remove_element(int value){
-	bool found =false;	
-	int indexToRemove = -1;
+layout(std430, set=0, binding=0) buffer inA { Grid grid[]; };
+layout(std430, set=1, binding=0) buffer outB { Path path[]; };
 
-	for(int i=0;i<size;i++){
-		if(test1[i]==value){
-			found = true;
-			indexToRemove = i;
-		}
-	}
-	if(found){
-		for (int i = indexToRemove; i < size-1; i++) { 
-    		test1[i] = test1[i + 1];
-		}
-		test1[size-1] =-1;
-	}
-	size = size-1;
 
+int oldToSearchNodeSize = GRID_SIZE;
+int currentToSearchNodeSize= 0;
+int toSearchNodes[GRID_SIZE];
+
+int oldProcessedNodesSize = GRID_SIZE;
+int currentProcessedNodesSize = 0;
+int processedNodes[GRID_SIZE];
+
+
+
+
+
+int calculate_distance(int ax, int ay, int bx, int by){
+    int dx = abs(ax - bx);
+    int dy = abs(ay - by);
+    if(dx>dy)
+        return 14*dy+10*(dx-dy);
+    return 14*dx+10*(dy-dx);
 }
 
-void add_element(int value){
+bool is_empty_to_search_nodes(){
+     return currentToSearchNodeSize==0;
+}
+
+
+bool find_in_search_nodes(int value){
+    for(int i=0;i<currentToSearchNodeSize;i++){
+        if(value == toSearchNodes[i]){
+            return true;
+        }
+    }
+    return false;
+}
+
+bool find_in_processed_nodes(int value){
+    for (int i = 0; i < currentProcessedNodesSize; i++)
+      {
+          if (value == processedNodes[i])
+          {
+              return true;
+          }
+      }
+    return false;
+}
+
+void remove_element_from_processed_nodes(int value){
 	bool found = false;
-	for(int i=0;i<old_size;i++){
-		if(test1[i] == -1){
-			test1[i] = value;
-			size++;
-			break;
-		}
-	}
+
+        int indexToRemove = -1;
+
+        for (int i = 0; i < currentProcessedNodesSize; i++)
+        {
+            if (processedNodes[i] == value)
+            {
+                found = true;
+                indexToRemove = i;
+            }
+        }
+        if (found)
+        {
+            for (int i = indexToRemove; i < currentProcessedNodesSize - 1; i++)
+            {
+                processedNodes[i] = processedNodes[i + 1];
+            }
+            processedNodes[currentProcessedNodesSize - 1] = -1;
+        }
+        currentProcessedNodesSize = currentProcessedNodesSize - 1;
+}
+void add_element_to_processed_nodes(int value){
+	  for (int i = 0; i < oldProcessedNodesSize; i++)
+        {
+            if (processedNodes[i] == -1)
+            {
+                processedNodes[i] = value;
+                currentProcessedNodesSize++;
+                break;
+            }
+        }
+}
+
+void add_element_to_search_nodes(int value){
+	   for (int i = 0; i < oldToSearchNodeSize; i++)
+        {
+            if (toSearchNodes[i] == -1)
+            {
+                toSearchNodes[i] = value;
+                currentToSearchNodeSize++;
+                break;
+            }
+        }
+}
+void remove_element_from_search_nodes(int value){
+	   	bool found = false;
+        int indexToRemove = -1;
+
+        for (int i = 0; i < currentToSearchNodeSize; i++)
+        {
+            if (toSearchNodes[i] == value)
+            {
+                found = true;
+                indexToRemove = i;
+            }
+        }
+        if (found)
+        {
+            for (int i = indexToRemove; i < currentToSearchNodeSize - 1; i++)
+            {
+                toSearchNodes[i] = toSearchNodes[i + 1];
+            }
+            toSearchNodes[currentToSearchNodeSize - 1] = -1;
+        }
+        currentToSearchNodeSize = currentToSearchNodeSize - 1;
+}
+    
+void CalculatePathfinding(){
+
+	 	add_element_to_search_nodes(grid[index].start);
+        while (!is_empty_to_search_nodes())
+        {
+		
+            int currentNode = toSearchNodes[0];
+            for (int i = 0; i < GRID_SIZE; i++)
+            {
+                if ((grid[index].nodes[toSearchNodes[i]].Fcost < grid[index].nodes[currentNode].Fcost) && (grid[index].nodes[toSearchNodes[i]].Hcost < grid[index].nodes[currentNode].Hcost))
+                {
+                    if(toSearchNodes[i]!=-1) {
+                        currentNode = toSearchNodes[i];
+                    }
+                }
+            }
+            
+            bool toBeRemoved = find_in_search_nodes(currentNode);
+            if(toBeRemoved){
+                remove_element_from_search_nodes(currentNode);
+            }
+            add_element_to_processed_nodes(currentNode);
+
+            if (currentNode == grid[index].end)
+            {	
+                ////path.clear();
+                int currentIDBack = grid[index].end;
+				//debugPrintfEXT("End %d", currentIDBack);
+                int pathIndex =0;
+                while ((currentIDBack != -1) && (currentIDBack != grid[index].start))
+                {
+					path[index].pathList[pathIndex] =currentIDBack;
+                    currentIDBack = grid[index].nodes[currentIDBack].previousNode;
+                    pathIndex++;
+                }
+				path[index].pathList[pathIndex] = grid[index].start;
+				
+                break;
+            }
+
+            for (int i = 0; i < 8; i++)
+            {
+                int neighbour = grid[index].nodes[currentNode].neighbours[i];
+
+                bool foundInProcessed = false;
+                foundInProcessed = find_in_processed_nodes(neighbour);
+
+                if ((neighbour != -1) && (!foundInProcessed) && (grid[index].nodes[neighbour].passable==1))
+                {
+                    int costToNeighbour = int(grid[index].nodes[currentNode].Gcost) + calculate_distance(grid[index].nodes[currentNode].i, grid[index].nodes[currentNode].j, grid[index].nodes[neighbour].i, grid[index].nodes[neighbour].j);
+
+                    bool found = false;
+                    found = find_in_search_nodes(neighbour);
+
+
+                    if ((costToNeighbour < grid[index].nodes[neighbour].Gcost) || (!found))
+                    {
+                        grid[index].nodes[neighbour].Gcost = costToNeighbour;
+                        grid[index].nodes[neighbour].previousNode = currentNode;
+                        grid[index].nodes[neighbour].Hcost = calculate_distance(grid[index].nodes[neighbour].i, grid[index].nodes[neighbour].j, grid[index].nodes[grid[index].end].i, grid[index].nodes[grid[index].end].j);
+                        grid[index].nodes[neighbour].Fcost = grid[index].nodes[neighbour].Gcost + grid[index].nodes[neighbour].Hcost;
+                        if (!found)
+                        {
+                            add_element_to_search_nodes(neighbour);
+                        }
+                    }
+                }
+            }
+        }
 }
 
 void main(){ 
-	const uint index = gl_GlobalInvocationID.x;
+	index = gl_GlobalInvocationID.x;
 
-	for(int i=0;i<old_size;i++){
-		test2[i]=test1[i];
+	for(int i=0;i<GRID_SIZE;i++){
+		processedNodes[i] =-1;
+		toSearchNodes[i] =-1;
 	}
-	remove_element(1);
-	add_element(100);
-	remove_element(2);
-	remove_element(3);
-	add_element(99);
-	add_element(101);
-	remove_element(101);
-	remove_element(5);
-	remove_element(7);
 
-	//for(int i=0;i<size;i++){
-	//	test2[i] = test1[i];
-	//}
-
-
-	//test2[index]=test1[index]*test1[index];
+	if(index ==0){
+		CalculatePathfinding();
+	}
+	//CalculatePathfinding();
 }

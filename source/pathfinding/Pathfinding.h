@@ -5,8 +5,8 @@
 namespace Pathfinding
 {
 
-    constexpr size_t GRID_ROW = 25;
-    constexpr size_t GRID_COLUMN = 25;
+    constexpr size_t GRID_ROW = 5;
+    constexpr size_t GRID_COLUMN = 5;
     constexpr size_t NUMBER_OF_AGENTS =GRID_ROW/3;
     
     constexpr int NORMAL_COST =10;
@@ -22,7 +22,7 @@ namespace Pathfinding
         float Fcost; // GCost + HCost
         float Hcost; // Distance to End Node
         float Gcost; // Distance to Start Node
-        bool passable; //Passable or Impassable
+        int passable; //Passable or Impassable
         int ID;
         int neighbours[8];
     };
