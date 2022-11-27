@@ -171,7 +171,7 @@ void CalculatePathfinding(){
             {	
                 ////path.clear();
                 int currentIDBack = grid[index].end;
-				//debugPrintfEXT("End %d", currentIDBack);
+				debugPrintfEXT("End %d", currentIDBack);
                 int pathIndex =0;
                 while ((currentIDBack != -1) && (currentIDBack != grid[index].start))
                 {
