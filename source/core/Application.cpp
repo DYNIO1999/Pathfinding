@@ -39,21 +39,12 @@ namespace Pathfinding
         while (m_window->IsOpen())
         {
 
-            // Delta Time
             m_deltaTime.Update(static_cast<float>(glfwGetTime()));
             // APP_TRACE("Delta Time: {}", m_deltaTime.AsMiliSeconds());
-            // Delta Time
-
-            // FRAME START
-            // dooo update
-            // doo render
-
-            // auto [x,y] = Input::MousePosition();
-            // APP_INFO("MOUSE_POSITION  X:{} Y:{}",x,y);
-            // FRAME END
+                        
             Update();
             Draw();
-            m_window->ProcessEvents(); // process events/inputs
+            m_window->ProcessEvents(); 
 
             m_fpsCounter.Update();
 
@@ -150,12 +141,6 @@ namespace Pathfinding
             vkDestroyDescriptorSetLayout(m_device->LogicalDeviceHandle(), m_computeSetLayouts[i], nullptr);
         }
         
-        //for(auto& it: m_ssbObjects){
-        //    //vkDestro
-        //    
-        //}
-
-
         for (int i = 0; i < 2; i++)
         {
             m_allocator->UnmapMemory(m_ssbObjects[i].buffer.allocationHandle);
@@ -201,13 +186,11 @@ namespace Pathfinding
         }
         if (computePathStart && !computePathEnd)
         {
-            APP_ERROR("COMPUTE GOES");
             CalculateCompute();
             computePathEnd = true;
         }
         if (cpuPathStart && !cpuPathEnd)
         {
-            APP_ERROR("CPU GOES");
             ResolvePath();
             cpuPathEnd = true;
         }
@@ -234,14 +217,14 @@ namespace Pathfinding
             pressed = !pressed;
         }
 
-        if (pressed)
+        if (pressed && (computePathStart || cpuPathStart))
         {
             for (auto &it : m_agents)
             {
                 it.Update(m_gridData, m_deltaTime.AsSeconds());
             }
         }
-        //
+    
 
         for (size_t i = 0; i < m_agents.size(); i++)
         {
