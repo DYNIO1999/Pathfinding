@@ -35,9 +35,6 @@ namespace Pathfinding
         CreateComputeCommandPool();
         
         BuildComputeCommands();
-        CalculateCompute();
-        ResolvePath();
-        
         
         // Init Vulkan
         while (m_window->IsOpen())
@@ -179,6 +176,25 @@ namespace Pathfinding
 
     void Application::Update()
     {
+
+        if(Input::KeyPressedOnce(GLFW_KEY_P)){
+            computePathStart =true;
+        }
+
+        if (Input::KeyPressedOnce(GLFW_KEY_O))
+        {
+            cpuPathStart =true;
+        }
+        if(computePathStart && !computePathEnd){
+            APP_ERROR("COMPUTE GOES");
+            CalculateCompute();
+            computePathEnd =true;
+        }
+        if(cpuPathStart && !cpuPathEnd){
+            APP_ERROR("CPU GOES");
+            ResolvePath();
+            cpuPathEnd = true;
+        }
 
         m_camera->Update(m_deltaTime.AsSeconds());
 
@@ -634,9 +650,9 @@ void Application::Draw()
     }
 
     void Application::CreateComputeStorageBuffers(){
-        VkDeviceSize bufferSize = sizeof(GridData);
-        VkDeviceSize bufferSize2 = sizeof(Path);
-        APP_ERROR("SIZE : {}", bufferSize);
+        VkDeviceSize bufferSize = sizeof(GridData)*NUMBER_OF_AGENTS;
+        VkDeviceSize bufferSize2 = sizeof(Path)*NUMBER_OF_AGENTS;
+        //APP_ERROR("SIZE : {}", bufferSize);
         VkBufferCreateInfo bufferInfo = {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -713,23 +729,29 @@ void Application::Draw()
         vkCmdBindPipeline(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipeline);
         vkCmdBindDescriptorSets(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayoutCompute, 0, 1, &m_ssbObjects[0].descriptor, 0, nullptr);
         vkCmdBindDescriptorSets(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayoutCompute, 1, 1, &m_ssbObjects[1].descriptor, 0, nullptr);
-        vkCmdDispatch(m_computeCommandBuffer, 1, 1, 1);                                                                                          
+        vkCmdDispatch(m_computeCommandBuffer, NUMBER_OF_AGENTS, 1, 1);                                                                                          
         if (vkEndCommandBuffer(m_computeCommandBuffer) != VK_SUCCESS)                                                                              
         {
             APP_ERROR("failed to end command buffer");
         }
 
+        GridData *grid = new GridData[NUMBER_OF_AGENTS];
         
-        GridData* grid = new GridData;
-        *grid = m_grid[0]; 
-        memcpy(m_ssbObjects[0].buffer.data, grid, sizeof(GridData));
-
-
-        Path* testPath = new Path;
-        for(int i=0;i<GRID_SIZE;i++){
-            testPath->pathList[i] =-1;
+        for(int i=0;i<NUMBER_OF_AGENTS;i++){
+            grid[i] = m_grid[i];
         }
-        memcpy(m_ssbObjects[1].buffer.data, testPath, sizeof(Path));
+        memcpy(m_ssbObjects[0].buffer.data, grid, sizeof(GridData) * NUMBER_OF_AGENTS);
+      
+
+
+        Path* testPath = new Path[NUMBER_OF_AGENTS];
+        for(int i=0;i<NUMBER_OF_AGENTS;i++){
+        for(int j=0;j<GRID_SIZE;j++){
+            testPath[i].pathList[j] =-1;
+        }
+        }
+        memcpy(m_ssbObjects[1].buffer.data, testPath, sizeof(Path)*NUMBER_OF_AGENTS);
+    
     }
 
     void Application::CalculateCompute(){
@@ -740,18 +762,23 @@ void Application::Draw()
         submitInfo2.commandBufferCount = 1;
         submitInfo2.pCommandBuffers = &m_computeCommandBuffer;
         
-        Timer time(true, "GPU Pathfinding");
         vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo2, VK_NULL_HANDLE);
+        Timer time(true, "GPU Pathfinding");
         vkQueueWaitIdle(m_device->GraphicsQueueHandle());
         }
 
-        APP_ERROR("-----------RESULT-------------");
         Path* path =(Path*)m_ssbObjects[1].buffer.data;
-        for(int i=0;i<GRID_SIZE;i++){
-            // APP_WARN("{} ", *it2); Commented just for testing CPU Pathfinding
-            APP_INFO("{}", path->pathList[i]);
+       
+        for(int i=0;i<NUMBER_OF_AGENTS;i++){
+            std::vector<int> temp;
+            for(int j=0;j<GRID_SIZE;j++){
+                if(path[i].pathList[j]!=-1){
+                 temp.push_back(path[i].pathList[j]);
+                }
+            }
+            std::reverse(temp.begin(), temp.end());
+            m_agents[i].path = temp;
         }
-        
     }
 
     void Application::InitGrids()

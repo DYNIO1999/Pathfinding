@@ -1,7 +1,7 @@
 #version 450
 #extension GL_EXT_debug_printf : enable
 
-const int GRID_SIZE = 25;
+const int GRID_SIZE = 400;
 uint index =0;
 struct Node{
 	int i;
@@ -222,9 +222,5 @@ void main(){
 		processedNodes[i] =-1;
 		toSearchNodes[i] =-1;
 	}
-
-	if(index ==0){
-		CalculatePathfinding();
-	}
-	//CalculatePathfinding();
+	CalculatePathfinding();
 }

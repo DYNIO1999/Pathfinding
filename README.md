@@ -44,26 +44,18 @@ Engine initialization | Boilerplate
     Switched to OpenGL View [DONE]
     Grid/Scene [DONE]
     Objects [DONE]
+    Input Fix cant have multiple callbacks [DONE]
+    Pathfinding CPU side [DONE]
 
-# DEADLINE [/23/24]
-    Input Fix cant have multiple callbacks
-    Pathfinding CPU side
-
-# DEADLINE [/25/26/27/28/29/30/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20]
+# DEADLINE [/28/29/30/]
     Pathfinding GPU
+# DEADLINE [1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20]
+    
     Abstraction/Encapsulation?
         - Graphic Pipeline []??
         - Storage Buffer []
         - Compute Pipeline []     
         - Objects []
 
-# DEADLINE []
-ImGUI Support
-
-
-# DEADLINE []
-[ADDITIONAL] BasicEventSystem
-    - Events
-    - Callbacks
 
 

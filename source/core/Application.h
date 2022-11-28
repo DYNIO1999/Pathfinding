@@ -232,6 +232,13 @@ private:
     std::vector<GridData> m_grid;
     void ResolvePath();
     bool pressed{false};
+
+
+    bool computePathStart{false};
+    bool computePathEnd{false};
+
+    bool cpuPathStart{false};
+    bool cpuPathEnd{false};
 };
 }
 #endif
