@@ -239,6 +239,9 @@ private:
 
     bool cpuPathStart{false};
     bool cpuPathEnd{false};
+
+    Path* m_pathGPU{nullptr};
+    GridData* m_gridGPU{nullptr};
 };
 }
 #endif

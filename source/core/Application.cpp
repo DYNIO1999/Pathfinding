@@ -12,7 +12,6 @@ namespace Pathfinding
     }
     Application::~Application()
     {
-
     }
 
     void Application::Run()
@@ -20,22 +19,22 @@ namespace Pathfinding
         // Timer timer(true);
         Initialize();
 
-        CreateCommandBuffers(); //move to SwapChain???
-        
+        CreateCommandBuffers(); // move to SwapChain???
+
         CreateDescriptorPool();
         CreateDescriptorSets();
         //
-        
+
         CreateComputePipelineLayout();
         CreateComputePipeline("../shaders/test.comp.spv");
         //
-        
+
         CreateComputeStorageBuffers();
         CreateComputeDescriptorPool();
         CreateComputeCommandPool();
-        
+
         BuildComputeCommands();
-        
+
         // Init Vulkan
         while (m_window->IsOpen())
         {
@@ -83,32 +82,26 @@ namespace Pathfinding
         m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, *m_allocator);
 
         m_defaultPipelineSpec = VulkanPipeline::DefaultPipelineSpecification(m_swapchain->RenderPassHandle());
-        
-        VulkanVertexInputDescription vertexDescription = VulkanVertexInputDescription::Create().
-                                                        AddBinding(0,sizeof(Vertex),VK_VERTEX_INPUT_RATE_VERTEX).
-                                                        AddAttribute(0,0,VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex,position)).
-                                                        AddAttribute(0,1,VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex,color));
 
+        VulkanVertexInputDescription vertexDescription = VulkanVertexInputDescription::Create().AddBinding(0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX).AddAttribute(0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)).AddAttribute(0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color));
 
         m_defaultPipelineSpec.vertexInputDescription = vertexDescription;
         m_defaultPipelineSpec.pushConstantData = std::make_unique<PipelinePushConstantData>(PipelinePushConstantData{glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         m_defaultPipelineSpec.AddDescriptorSetLayout(*m_device);
         m_defaultPipline = std::make_unique<VulkanPipeline>(*m_device, "../shaders/test.vert.spv", "../shaders/test.frag.spv", m_defaultPipelineSpec);
 
-
-        auto [width,height] = Application::GetWindow()->WindowSize();
+        auto [width, height] = Application::GetWindow()->WindowSize();
         m_camera = std::make_unique<Camera>(static_cast<float>(width), static_cast<float>(height));
-        
-        
+
         //
         InitGrids();
-        InitObjects(); //Geometry initialization such as vertices and indices
+        InitObjects(); // Geometry initialization such as vertices and indices
         //
 
         m_vertexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::VERTEX_BUFFER, m_vertices.data(), sizeof(Vertex) * m_vertices.size());
         m_indexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::INDEX_BUFFER, m_indices.data(), sizeof(u_int32_t) * m_indices.size());
-        
-        //Uniform Buffers
+
+        // Uniform Buffers
         for (auto i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
 
@@ -142,19 +135,39 @@ namespace Pathfinding
         }
     }
     void Application::Shutdown()
-    {     
-        vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
+    {
 
-        for(int i=0;i<2;i++){
+        delete[] m_gridGPU;
+        delete[] m_pathGPU;
+        
+        vkDeviceWaitIdle(m_device->LogicalDeviceHandle());
+    
+        vkDestroyPipeline(m_device->LogicalDeviceHandle(), m_computePipeline, nullptr);
+        vkDestroyPipelineLayout(m_device->LogicalDeviceHandle(), m_pipelineLayoutCompute,nullptr);
+
+        for (size_t i = 0; i < m_computeSetLayouts.size(); i++)
+        {
+            vkDestroyDescriptorSetLayout(m_device->LogicalDeviceHandle(), m_computeSetLayouts[i], nullptr);
+        }
+        
+        //for(auto& it: m_ssbObjects){
+        //    //vkDestro
+        //    
+        //}
+
+
+        for (int i = 0; i < 2; i++)
+        {
             m_allocator->UnmapMemory(m_ssbObjects[i].buffer.allocationHandle);
-            m_allocator->DestroyBuffer(m_ssbObjects[i].buffer.bufferHandle,m_ssbObjects[i].buffer.allocationHandle);
+            m_allocator->DestroyBuffer(m_ssbObjects[i].buffer.bufferHandle, m_ssbObjects[i].buffer.allocationHandle);
         }
 
-        for(auto it: m_defaultPipelineSpec.descriptorSetLayouts){
+        for (auto it : m_defaultPipelineSpec.descriptorSetLayouts)
+        {
             vkDestroyDescriptorSetLayout(m_device->LogicalDeviceHandle(), it, nullptr);
         }
-
-        vkDestroyDescriptorPool(m_device->LogicalDeviceHandle(),m_descriptorPool,nullptr);
+        vkDestroyDescriptorPool(m_device->LogicalDeviceHandle(), m_descriptorPoolCompute, nullptr);
+        vkDestroyDescriptorPool(m_device->LogicalDeviceHandle(), m_descriptorPool, nullptr);
     }
 
     void Application::CreateCommandBuffers()
@@ -177,20 +190,23 @@ namespace Pathfinding
     void Application::Update()
     {
 
-        if(Input::KeyPressedOnce(GLFW_KEY_P)){
-            computePathStart =true;
+        if (Input::KeyPressedOnce(GLFW_KEY_P))
+        {
+            computePathStart = true;
         }
 
         if (Input::KeyPressedOnce(GLFW_KEY_O))
         {
-            cpuPathStart =true;
+            cpuPathStart = true;
         }
-        if(computePathStart && !computePathEnd){
+        if (computePathStart && !computePathEnd)
+        {
             APP_ERROR("COMPUTE GOES");
             CalculateCompute();
-            computePathEnd =true;
+            computePathEnd = true;
         }
-        if(cpuPathStart && !cpuPathEnd){
+        if (cpuPathStart && !cpuPathEnd)
+        {
             APP_ERROR("CPU GOES");
             ResolvePath();
             cpuPathEnd = true;
@@ -213,12 +229,15 @@ namespace Pathfinding
             m_obstacles[i].modelUBOs[m_swapchain->CurrentFrame()]->UpdateMemory(&m_obstacles[i].transform);
         }
 
-        if(Input::KeyPressedOnce(GLFW_KEY_SPACE)){
+        if (Input::KeyPressedOnce(GLFW_KEY_SPACE))
+        {
             pressed = !pressed;
         }
 
-        if(pressed){
-            for(auto& it: m_agents){
+        if (pressed)
+        {
+            for (auto &it : m_agents)
+            {
                 it.Update(m_gridData, m_deltaTime.AsSeconds());
             }
         }
@@ -230,7 +249,7 @@ namespace Pathfinding
         }
     }
 
-void Application::Draw()
+    void Application::Draw()
     {
 
         uint32_t imageIndex;
@@ -268,7 +287,7 @@ void Application::Draw()
 
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = m_swapchain->Extent();
-    
+
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = {{0.025f, 0.025f, 0.025f, 1.0f}};
         clearValues[1].depthStencil = {1.0f, 0};
@@ -294,24 +313,26 @@ void Application::Draw()
 
         VkDeviceSize offset = 0;
 
-
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer->BufferHandle(), &offset);
-        vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->BufferHandle(),0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->BufferHandle(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 0, 1, &m_cameraData.descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
         for (size_t i = 0; i < m_gridData.size(); i++)
         {
-            
+
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_gridData[i].color;
-            for(int k =0;k<NUMBER_OF_AGENTS;k++){
-            for(auto& it: m_agents[k].path){
-                 if(m_gridData[i].index == it){
-                     pushConstant.color = m_agents[k].color;
-                 }
-            }
+            for (int k = 0; k < NUMBER_OF_AGENTS; k++)
+            {
+                for (auto &it : m_agents[k].path)
+                {
+                    if (m_gridData[i].index == it)
+                    {
+                        pushConstant.color = m_agents[k].color;
+                    }
+                }
             }
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1,&m_gridData[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1, &m_gridData[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
         }
 
@@ -320,7 +341,7 @@ void Application::Draw()
 
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_obstacles[i].color;
-            
+
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1, &m_obstacles[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
@@ -351,7 +372,7 @@ void Application::Draw()
             else
             {
                 std::shared_ptr<VulkanSwapChain> oldSwapChain = std::move(m_swapchain);
-                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, *m_allocator,oldSwapChain);
+                m_swapchain = std::make_unique<VulkanSwapChain>(*m_device, *m_allocator, oldSwapChain);
             }
         }
     }
@@ -359,7 +380,6 @@ void Application::Draw()
     void Application::InitObjects()
     {
 
-        
         m_vertices.emplace_back(Vertex{glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         m_vertices.emplace_back(Vertex{glm::vec3(1.0f, 1.0f, -1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         m_vertices.emplace_back(Vertex{glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
@@ -369,14 +389,15 @@ void Application::Draw()
         m_vertices.emplace_back(Vertex{glm::vec3(-1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
         m_vertices.emplace_back(Vertex{glm::vec3(1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
 
-                
         m_gridData.resize(GRID_SIZE);
-        //Grid
+        // Grid
         glm::mat4 model = glm::mat4(1);
         size_t indexTemp = 0;
-        for(size_t i =0;i<GRID_ROW;i++){
-            for(size_t j =0;j<GRID_COLUMN;j++){
-                glm::mat4 transform = glm::translate(model, glm::vec3(4.0f * i, 0.0f, -4.0f*j));
+        for (size_t i = 0; i < GRID_ROW; i++)
+        {
+            for (size_t j = 0; j < GRID_COLUMN; j++)
+            {
+                glm::mat4 transform = glm::translate(model, glm::vec3(4.0f * i, 0.0f, -4.0f * j));
                 m_gridData[indexTemp].position = glm::vec3(4.0f * i, 0.0f, -4.0f * j);
                 transform = glm::scale(transform, glm::vec3(1.0, 0.5, 1.0));
                 m_gridData[indexTemp].transform = transform;
@@ -386,10 +407,11 @@ void Application::Draw()
         }
         //
 
-        //Obstacle
+        // Obstacle
         m_obstacles.resize(m_obstaclesIndexes.size());
-        size_t currentObstacleIndex=0;
-        for(auto& index: m_obstaclesIndexes){
+        size_t currentObstacleIndex = 0;
+        for (auto &index : m_obstaclesIndexes)
+        {
             m_obstacles[currentObstacleIndex].position = m_gridData[index].position;
             m_obstacles[currentObstacleIndex].transform = glm::translate(glm::mat4(1), m_obstacles[currentObstacleIndex].position + glm::vec3(0.0f, 1.5f, 0.0f));
             currentObstacleIndex++;
@@ -397,7 +419,8 @@ void Application::Draw()
         //
 
         std::vector<float> randomColors;
-        for(int c=0;c<=255;c+=NUMBER_OF_AGENTS){
+        for (int c = 0; c <= 255; c += NUMBER_OF_AGENTS)
+        {
             randomColors.push_back(c);
         }
         std::random_shuffle(randomColors.begin(), randomColors.end());
@@ -405,24 +428,23 @@ void Application::Draw()
         m_agents.resize(NUMBER_OF_AGENTS);
         for (int i = 0; i < m_agents.size(); i++)
         {
-            m_agents[i].color = glm::vec4(((float)randomColors[m_agents.size()-1-i])/255.0f,((float)randomColors[i+1])/255.0f,((float)randomColors[i])/255.0f,1.0f);
+            m_agents[i].color = glm::vec4(((float)randomColors[m_agents.size() - 1 - i]) / 255.0f, ((float)randomColors[i + 1]) / 255.0f, ((float)randomColors[i]) / 255.0f, 1.0f);
             m_agents[i].position = m_gridData[m_grid[i].start].position;
             m_agents[i].transform = glm::translate(glm::mat4(1), m_agents[i].position + glm::vec3(0.0f, 1.5f, 0.0f));
         }
-
     }
     void Application::CreateDescriptorPool()
     {
         VkDescriptorPoolSize poolSize{};
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        //poolSize.descriptorCount = 2 + (m_gridData.size() * 2);
+        // poolSize.descriptorCount = 2 + (m_gridData.size() * 2);
         poolSize.descriptorCount = 10000;
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
         poolInfo.pPoolSizes = &poolSize;
-        //poolInfo.maxSets = 2 + (m_gridData.size()*2);
+        // poolInfo.maxSets = 2 + (m_gridData.size()*2);
         poolInfo.maxSets = 10000;
 
         VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->LogicalDeviceHandle(), &poolInfo, nullptr, &m_descriptorPool));
@@ -432,7 +454,7 @@ void Application::Draw()
 
         std::vector<VkDescriptorSetLayout> layouts{m_defaultPipelineSpec.descriptorSetLayouts[0], m_defaultPipelineSpec.descriptorSetLayouts[1]};
 
-        for(size_t i = 0;i<2;i++)
+        for (size_t i = 0; i < 2; i++)
         {
             VkDescriptorSetAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -442,15 +464,16 @@ void Application::Draw()
             vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, &m_cameraData.descriptors[i]);
         }
 
-        for (size_t i = 0; i < 2; i++){
+        for (size_t i = 0; i < 2; i++)
+        {
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = m_cameraData.cameraUBOs[i]->BufferHandle();
             bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(CameraUBO::Values);    
-            
+            bufferInfo.range = sizeof(CameraUBO::Values);
+
             VkWriteDescriptorSet descriptorWrite{};
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet =  m_cameraData.descriptors[i];
+            descriptorWrite.dstSet = m_cameraData.descriptors[i];
             descriptorWrite.dstBinding = 0;
             descriptorWrite.dstArrayElement = 0;
             descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -458,7 +481,6 @@ void Application::Draw()
             descriptorWrite.pBufferInfo = &bufferInfo;
             vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &descriptorWrite, 0, nullptr);
         }
-
 
         for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -473,8 +495,6 @@ void Application::Draw()
                 vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &allocInfo, &m_gridData[j].descriptors[i]);
             }
         }
-
-
 
         for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -498,8 +518,7 @@ void Application::Draw()
             }
         }
 
-
-        //Blocked Cubes Paths
+        // Blocked Cubes Paths
 
         for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -537,7 +556,7 @@ void Application::Draw()
             }
         }
 
-        //Agents
+        // Agents
 
         for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -576,7 +595,8 @@ void Application::Draw()
         }
     }
 
-    void Application::CreateComputePipelineLayout(){
+    void Application::CreateComputePipelineLayout()
+    {
 
         {
             VkDescriptorSetLayout descriptorSetLayout;
@@ -633,26 +653,26 @@ void Application::Draw()
 
         VkShaderModule shaderModule = VK_NULL_HANDLE;
         VK_CHECK_RESULT(vkCreateShaderModule(m_device->LogicalDeviceHandle(), &shaderModuleCreateInfo, nullptr, &shaderModule));
-      
 
         VkComputePipelineCreateInfo pipelineCreateInfo{};
-        pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO; 
+        pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
         pipelineCreateInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        pipelineCreateInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT; 
+        pipelineCreateInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         pipelineCreateInfo.stage.module = shaderModule;
 
         pipelineCreateInfo.stage.pName = "main";
         pipelineCreateInfo.layout = m_pipelineLayoutCompute;
 
         VK_CHECK_RESULT(vkCreateComputePipelines(m_device->LogicalDeviceHandle(), VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_computePipeline));
-        
+
         vkDestroyShaderModule(m_device->LogicalDeviceHandle(), shaderModule, nullptr);
     }
 
-    void Application::CreateComputeStorageBuffers(){
-        VkDeviceSize bufferSize = sizeof(GridData)*NUMBER_OF_AGENTS;
-        VkDeviceSize bufferSize2 = sizeof(Path)*NUMBER_OF_AGENTS;
-        //APP_ERROR("SIZE : {}", bufferSize);
+    void Application::CreateComputeStorageBuffers()
+    {
+        VkDeviceSize bufferSize = sizeof(GridData) * NUMBER_OF_AGENTS;
+        VkDeviceSize bufferSize2 = sizeof(Path) * NUMBER_OF_AGENTS;
+        // APP_ERROR("SIZE : {}", bufferSize);
         VkBufferCreateInfo bufferInfo = {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -662,7 +682,7 @@ void Application::Draw()
         bufferInfo2.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo2.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         bufferInfo2.size = bufferSize2;
-        
+
         m_ssbObjects[0].buffer.allocationHandle = m_allocator->AllocateBuffer(&bufferInfo, VMA_MEMORY_USAGE_CPU_TO_GPU, &m_ssbObjects[0].buffer.bufferHandle);
         m_ssbObjects[0].buffer.data = m_allocator->MapMemory(m_ssbObjects[0].buffer.allocationHandle);
 
@@ -670,7 +690,8 @@ void Application::Draw()
         m_ssbObjects[1].buffer.data = m_allocator->MapMemory(m_ssbObjects[1].buffer.allocationHandle);
     }
 
-    void Application::CreateComputeDescriptorPool(){
+    void Application::CreateComputeDescriptorPool()
+    {
         VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
         descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         descriptorPoolCreateInfo.maxSets = 2;
@@ -689,27 +710,29 @@ void Application::Draw()
         descriptorSetAllocateInfo.descriptorSetCount = 1;
         descriptorSetAllocateInfo.pSetLayouts = m_computeSetLayouts.data();
 
-        for(int i=0;i<2;i++){
-             VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &descriptorSetAllocateInfo, &m_ssbObjects[i].descriptor));
+        for (int i = 0; i < 2; i++)
+        {
+            VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device->LogicalDeviceHandle(), &descriptorSetAllocateInfo, &m_ssbObjects[i].descriptor));
 
-             VkDescriptorBufferInfo bufferInfo{};
-             bufferInfo.buffer = m_ssbObjects[i].buffer.bufferHandle;
-             bufferInfo.offset = 0;
-             bufferInfo.range = VK_WHOLE_SIZE;
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = m_ssbObjects[i].buffer.bufferHandle;
+            bufferInfo.offset = 0;
+            bufferInfo.range = VK_WHOLE_SIZE;
 
-             VkWriteDescriptorSet writeDescriptorSet{};
-             writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-             writeDescriptorSet.dstSet = m_ssbObjects[i].descriptor;
-             writeDescriptorSet.dstBinding = 0;
-             writeDescriptorSet.dstArrayElement = 0;
-             writeDescriptorSet.descriptorCount = 1;
-             writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-             writeDescriptorSet.pBufferInfo = &bufferInfo;
+            VkWriteDescriptorSet writeDescriptorSet{};
+            writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeDescriptorSet.dstSet = m_ssbObjects[i].descriptor;
+            writeDescriptorSet.dstBinding = 0;
+            writeDescriptorSet.dstArrayElement = 0;
+            writeDescriptorSet.descriptorCount = 1;
+            writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            writeDescriptorSet.pBufferInfo = &bufferInfo;
 
-             vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &writeDescriptorSet, 0, nullptr);
+            vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &writeDescriptorSet, 0, nullptr);
         }
     }
-    void Application::CreateComputeCommandPool(){
+    void Application::CreateComputeCommandPool()
+    {
 
         VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
         commandBufferAllocateInfo.sType =
@@ -721,7 +744,8 @@ void Application::Draw()
         VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device->LogicalDeviceHandle(), &commandBufferAllocateInfo, &m_computeCommandBuffer));
     }
 
-    void Application::BuildComputeCommands(){
+    void Application::BuildComputeCommands()
+    {
         // Compute command buffer
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -729,51 +753,55 @@ void Application::Draw()
         vkCmdBindPipeline(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipeline);
         vkCmdBindDescriptorSets(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayoutCompute, 0, 1, &m_ssbObjects[0].descriptor, 0, nullptr);
         vkCmdBindDescriptorSets(m_computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelineLayoutCompute, 1, 1, &m_ssbObjects[1].descriptor, 0, nullptr);
-        vkCmdDispatch(m_computeCommandBuffer, NUMBER_OF_AGENTS, 1, 1);                                                                                          
-        if (vkEndCommandBuffer(m_computeCommandBuffer) != VK_SUCCESS)                                                                              
+        vkCmdDispatch(m_computeCommandBuffer, NUMBER_OF_AGENTS, 1, 1);
+        if (vkEndCommandBuffer(m_computeCommandBuffer) != VK_SUCCESS)
         {
             APP_ERROR("failed to end command buffer");
         }
 
-        GridData *grid = new GridData[NUMBER_OF_AGENTS];
-        
-        for(int i=0;i<NUMBER_OF_AGENTS;i++){
-            grid[i] = m_grid[i];
-        }
-        memcpy(m_ssbObjects[0].buffer.data, grid, sizeof(GridData) * NUMBER_OF_AGENTS);
-      
+        m_gridGPU = new GridData[NUMBER_OF_AGENTS];
 
+        for (int i = 0; i < NUMBER_OF_AGENTS; i++)
+        {
+            m_gridGPU[i] = m_grid[i];
+        }
+        memcpy(m_ssbObjects[0].buffer.data, m_gridGPU, sizeof(GridData) * NUMBER_OF_AGENTS);
 
-        Path* testPath = new Path[NUMBER_OF_AGENTS];
-        for(int i=0;i<NUMBER_OF_AGENTS;i++){
-        for(int j=0;j<GRID_SIZE;j++){
-            testPath[i].pathList[j] =-1;
+        m_pathGPU = new Path[NUMBER_OF_AGENTS];
+        for (int i = 0; i < NUMBER_OF_AGENTS; i++)
+        {
+            for (int j = 0; j < GRID_SIZE; j++)
+            {
+                m_pathGPU[i].pathList[j] = -1;
+            }
         }
-        }
-        memcpy(m_ssbObjects[1].buffer.data, testPath, sizeof(Path)*NUMBER_OF_AGENTS);
-    
+        memcpy(m_ssbObjects[1].buffer.data, m_pathGPU, sizeof(Path) * NUMBER_OF_AGENTS);
     }
 
-    void Application::CalculateCompute(){
+    void Application::CalculateCompute()
+    {
         {
-     
-        VkSubmitInfo submitInfo2 = {};
-        submitInfo2.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo2.commandBufferCount = 1;
-        submitInfo2.pCommandBuffers = &m_computeCommandBuffer;
-        
-        vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo2, VK_NULL_HANDLE);
-        Timer time(true, "GPU Pathfinding");
-        vkQueueWaitIdle(m_device->GraphicsQueueHandle());
+
+            VkSubmitInfo submitInfo2 = {};
+            submitInfo2.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submitInfo2.commandBufferCount = 1;
+            submitInfo2.pCommandBuffers = &m_computeCommandBuffer;
+
+            vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo2, VK_NULL_HANDLE);
+            Timer time(true, "GPU Pathfinding");
+            vkQueueWaitIdle(m_device->GraphicsQueueHandle());
         }
 
-        Path* path =(Path*)m_ssbObjects[1].buffer.data;
-       
-        for(int i=0;i<NUMBER_OF_AGENTS;i++){
+        Path *path = (Path *)m_ssbObjects[1].buffer.data;
+
+        for (int i = 0; i < NUMBER_OF_AGENTS; i++)
+        {
             std::vector<int> temp;
-            for(int j=0;j<GRID_SIZE;j++){
-                if(path[i].pathList[j]!=-1){
-                 temp.push_back(path[i].pathList[j]);
+            for (int j = 0; j < GRID_SIZE; j++)
+            {
+                if (path[i].pathList[j] != -1)
+                {
+                    temp.push_back(path[i].pathList[j]);
                 }
             }
             std::reverse(temp.begin(), temp.end());
@@ -798,15 +826,18 @@ void Application::Draw()
                 grid.nodes[index].Fcost = 0.0f;
                 grid.nodes[index].Hcost = 0.0f;
                 grid.nodes[index].Gcost = 0.0f;
-                if((i>0) && (i<GRID_ROW-1) && (j>=0)&& (j<GRID_COLUMN)){
-                    if ((rand()%3) == 0)
+                if ((i > 0) && (i < GRID_ROW - 1) && (j >= 0) && (j < GRID_COLUMN))
+                {
+                    if ((rand() % 3) == 0)
                     {
                         grid.nodes[index].passable = 0;
-                        m_obstaclesIndexes.push_back(index);          
-                    }else{
-                    grid.nodes[index].passable = 1;
+                        m_obstaclesIndexes.push_back(index);
                     }
-                } 
+                    else
+                    {
+                        grid.nodes[index].passable = 1;
+                    }
+                }
                 else
                 {
                     grid.nodes[index].passable = 1;
@@ -857,24 +888,28 @@ void Application::Draw()
         }
 
         std::vector<int> randomNumbers;
-        for(int i=0;i<GRID_COLUMN;i++){
+        for (int i = 0; i < GRID_COLUMN; i++)
+        {
             randomNumbers.emplace_back(i);
         }
         std::random_shuffle(randomNumbers.begin(), randomNumbers.end());
 
-        for(int k=0;k<NUMBER_OF_AGENTS;k++){
-           m_grid.push_back(grid);
-           int firstNumber = randomNumbers[k];
-           int secondNumber = randomNumbers[randomNumbers.size()-1-k];
-           m_grid[k].start = AStar::FindIndex(0,firstNumber);
-           m_grid[k].end = AStar::FindIndex(GRID_ROW-1, secondNumber);      
+        for (int k = 0; k < NUMBER_OF_AGENTS; k++)
+        {
+            m_grid.push_back(grid);
+            int firstNumber = randomNumbers[k];
+            int secondNumber = randomNumbers[randomNumbers.size() - 1 - k];
+            m_grid[k].start = AStar::FindIndex(0, firstNumber);
+            m_grid[k].end = AStar::FindIndex(GRID_ROW - 1, secondNumber);
         }
     }
 
-    void Application::ResolvePath(){
+    void Application::ResolvePath()
+    {
         Timer cpuPathfindingTimer(true, "CPU Pathfinding");
-        for(int k=0;k<NUMBER_OF_AGENTS;k++){
-            auto result = AStar::FindPath(m_grid[k]);    
+        for (int k = 0; k < NUMBER_OF_AGENTS; k++)
+        {
+            auto result = AStar::FindPath(m_grid[k]);
             m_agents[k].path = result;
         }
     }
