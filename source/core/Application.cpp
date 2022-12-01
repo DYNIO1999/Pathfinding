@@ -56,12 +56,7 @@ namespace Pathfinding
 
     void Application::Initialize()
     {
-
-        std::filesystem::path cwd = std::filesystem::current_path();
-        std::cout << cwd << '\n';
-
-        Timer timer(true, GET_NAME(Initialize()));
-
+        
         Logger::Init();
 
         m_window = std::make_shared<Window>(1600, 900, std::move("Pathfinding"));
@@ -304,7 +299,7 @@ namespace Pathfinding
 
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_gridData[i].color;
-            for (int k = 0; k < NUMBER_OF_AGENTS; k++)
+            for (size_t k = 0; k < NUMBER_OF_AGENTS; k++)
             {
                 for (auto &it : m_agents[k].path)
                 {
