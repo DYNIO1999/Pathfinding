@@ -47,9 +47,10 @@ namespace Pathfinding
             m_window->ProcessEvents(); 
 
             m_fpsCounter.Update();
-
-            // if(m_fpsCounter.GetFPS()>0)
-            //     APP_TRACE("FPS {}", m_fpsCounter.GetFPS());
+            if(Input::KeyPressedOnce(GLFW_KEY_F)){
+                if(m_fpsCounter.GetFPS()>0)
+                    APP_TRACE("FPS {}", m_fpsCounter.GetFPS());
+            }
         }
         Shutdown();
     }
@@ -179,7 +180,7 @@ namespace Pathfinding
         {
             cpuPathStart = true;
         }
-        if (computePathStart && !computePathEnd)
+        if (computePathStart && !computePathEnd && cpuPathEnd)
         {
             CalculateCompute();
             computePathEnd = true;
@@ -415,15 +416,13 @@ namespace Pathfinding
     {
         VkDescriptorPoolSize poolSize{};
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        // poolSize.descriptorCount = 2 + (m_gridData.size() * 2);
-        poolSize.descriptorCount = 10000;
+        poolSize.descriptorCount = (2 * m_gridData.size()) + (2 * m_agents.size()) + (2 * m_obstacles.size()) + 2;
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
         poolInfo.pPoolSizes = &poolSize;
-        // poolInfo.maxSets = 2 + (m_gridData.size()*2);
-        poolInfo.maxSets = 10000;
+        poolInfo.maxSets = (2 * m_gridData.size()) + (2 * m_agents.size()) +  (2*m_obstacles.size()) + 2;
 
         VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->LogicalDeviceHandle(), &poolInfo, nullptr, &m_descriptorPool));
     }
@@ -766,7 +765,7 @@ namespace Pathfinding
             submitInfo2.pCommandBuffers = &m_computeCommandBuffer;
 
             vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo2, VK_NULL_HANDLE);
-            Timer time(true, "GPU Pathfinding");
+            Timer time(true, "GPU Pathfinding", _time);
             vkQueueWaitIdle(m_device->GraphicsQueueHandle());
         }
 
@@ -890,5 +889,6 @@ namespace Pathfinding
             auto result = AStar::FindPath(m_grid[k]);
             m_agents[k].path = result;
         }
+        _time = cpuPathfindingTimer.GetElapsedMiliseconds();
     }
 }

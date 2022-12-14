@@ -242,6 +242,7 @@ private:
 
     Path* m_pathGPU{nullptr};
     GridData* m_gridGPU{nullptr};
+    float _time{0.0f};
 };
 }
 #endif
