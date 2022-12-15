@@ -22,6 +22,7 @@ namespace Pathfinding
 
         VmaAllocation AllocateImage(VkImageCreateInfo* createInfo, VmaMemoryUsage usage, VkImage *outImage);
         void DestroyImage(VkImage image, VmaAllocation allocation);
+        void ShowAllocatedMemory();
     private: 
         VulkanDevice &m_deviceRef;
         VmaAllocator m_allocatorHandle;

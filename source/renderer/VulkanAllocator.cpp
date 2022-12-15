@@ -2,7 +2,7 @@
 #include "VulkanContext.h"
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
-
+#include "../input/Input.h"
 namespace Pathfinding
 {
     VulkanAllocator::VulkanAllocator(VulkanDevice &device):m_deviceRef(device)
@@ -30,7 +30,7 @@ namespace Pathfinding
 
         VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
         vmaGetHeapBudgets(m_allocatorHandle, budgets);
-
+        APP_ERROR("All of allocated memory by VMA ALLOCATOR freed!");
         APP_ERROR("VMA ALLOCATOR: has {} allocations taking {} bytes",
                budgets[heapIndex].statistics.allocationCount,
                budgets[heapIndex].statistics.allocationBytes);
@@ -80,5 +80,16 @@ namespace Pathfinding
     void VulkanAllocator::DestroyImage(VkImage image, VmaAllocation allocation)
     {
         vmaDestroyImage(m_allocatorHandle, image, allocation);
+    }
+    void VulkanAllocator::ShowAllocatedMemory()
+    {
+        uint32_t heapIndex = 0;
+
+        VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+        vmaGetHeapBudgets(m_allocatorHandle, budgets);
+        APP_WARN("VMA ALLOCATOR: has {} allocations taking {} bytes or {} megabytes",
+                 budgets[heapIndex].statistics.allocationCount,
+                 budgets[heapIndex].statistics.allocationBytes,
+                 budgets[heapIndex].statistics.allocationBytes / 1000000);
     }
 } 

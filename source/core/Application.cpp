@@ -51,6 +51,10 @@ namespace Pathfinding
                 if(m_fpsCounter.GetFPS()>0)
                     APP_TRACE("FPS {}", m_fpsCounter.GetFPS());
             }
+
+            if (Input::KeyPressedOnce(GLFW_KEY_M))
+                m_allocator->ShowAllocatedMemory();
+
         }
         Shutdown();
     }
