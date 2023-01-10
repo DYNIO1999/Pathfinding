@@ -1,7 +1,7 @@
 #version 450
 #extension GL_EXT_debug_printf : enable
 
-const int GRID_SIZE = 1600;
+const int GRID_SIZE = 900;
 uint index =0;
 struct Node{
 	int i;
@@ -170,7 +170,6 @@ void CalculatePathfinding(){
             if (currentNode == grid[index].end)
             {	
                 int currentIDBack = grid[index].end;
-				//debugPrintfEXT("End %d", currentIDBack);
                 int pathIndex =0;
                 while ((currentIDBack != -1) && (currentIDBack != grid[index].start))
                 {

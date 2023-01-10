@@ -23,7 +23,6 @@ namespace Pathfinding
         static std::shared_ptr<spdlog::logger> s_logger;
     };
 }
-// Core Logging Macros
 #define VK_CHECK_RESULT(f)             \
     {                                  \
         VkResult res = (f);            \

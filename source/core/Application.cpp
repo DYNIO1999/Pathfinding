@@ -16,31 +16,28 @@ namespace Pathfinding
 
     void Application::Run()
     {
-        // Timer timer(true);
         Initialize();
 
-        CreateCommandBuffers(); // move to SwapChain???
+        CreateCommandBuffers(); 
 
         CreateDescriptorPool();
         CreateDescriptorSets();
-        //
+        
 
         CreateComputePipelineLayout();
         CreateComputePipeline("../shaders/test.comp.spv");
-        //
-
+        
         CreateComputeStorageBuffers();
         CreateComputeDescriptorPool();
         CreateComputeCommandPool();
 
         BuildComputeCommands();
 
-        // Init Vulkan
+        
         while (m_window->IsOpen())
         {
 
             m_deltaTime.Update(static_cast<float>(glfwGetTime()));
-            // APP_TRACE("Delta Time: {}", m_deltaTime.AsMiliSeconds());
                         
             Update();
             Draw();
@@ -54,6 +51,10 @@ namespace Pathfinding
 
             if (Input::KeyPressedOnce(GLFW_KEY_M))
                 m_allocator->ShowAllocatedMemory();
+            if(Input::KeyPressedOnce(GLFW_KEY_N)){
+                if (m_statsObjectsRendered)
+                    APP_TRACE("Number of objects currently being rendered: {}", m_statsObjectsRendered);
+            }
 
         }
         Shutdown();
@@ -84,15 +85,13 @@ namespace Pathfinding
         auto [width, height] = Application::GetWindow()->WindowSize();
         m_camera = std::make_unique<Camera>(static_cast<float>(width), static_cast<float>(height));
 
-        //
         InitGrids();
-        InitObjects(); // Geometry initialization such as vertices and indices
-        //
+        InitObjects(); 
+
 
         m_vertexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::VERTEX_BUFFER, m_vertices.data(), sizeof(Vertex) * m_vertices.size());
         m_indexBuffer = std::make_unique<VulkanBuffer>(*m_device, *m_allocator, VulkanBufferType::INDEX_BUFFER, m_indices.data(), sizeof(u_int32_t) * m_indices.size());
 
-        // Uniform Buffers
         for (auto i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
 
@@ -278,7 +277,6 @@ namespace Pathfinding
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
-        // Begin Render Pass
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport viewport{};
@@ -288,8 +286,9 @@ namespace Pathfinding
         viewport.height = -static_cast<float>(m_swapchain->Extent().height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        VkRect2D scissor{{0, 0}, m_swapchain->Extent()};
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        
+        VkRect2D scissor{{0, 0}, m_swapchain->Extent()};
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
         m_defaultPipline->Bind(commandBuffer);
@@ -321,10 +320,8 @@ namespace Pathfinding
 
         for (size_t i = 0; i < m_obstacles.size(); i++)
         {
-
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_obstacles[i].color;
-
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_defaultPipline->PipelineLayoutHandle(), 1, 1, &m_obstacles[i].descriptors[m_swapchain->CurrentFrame()], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, m_indices.size(), 1, 0, 0, 0);
@@ -332,7 +329,6 @@ namespace Pathfinding
 
         for (size_t i = 0; i < m_agents.size(); i++)
         {
-
             PipelinePushConstantData pushConstant;
             pushConstant.color = m_agents[i].color;
             vkCmdPushConstants(commandBuffer, m_defaultPipline->PipelineLayoutHandle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantData), &pushConstant);
@@ -341,7 +337,6 @@ namespace Pathfinding
         }
 
         vkCmdEndRenderPass(commandBuffer);
-        // End Render Pass
         vkEndCommandBuffer(commandBuffer);
 
         VkResult submitResult = m_swapchain->SubmitCommandBuffers(&commandBuffer, &imageIndex);
@@ -373,13 +368,13 @@ namespace Pathfinding
         m_vertices.emplace_back(Vertex{glm::vec3(1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.5f, 0.0f)});
 
         m_gridData.resize(GRID_SIZE);
-        // Grid
         glm::mat4 model = glm::mat4(1);
         size_t indexTemp = 0;
         for (size_t i = 0; i < GRID_ROW; i++)
         {
             for (size_t j = 0; j < GRID_COLUMN; j++)
             {
+                m_statsObjectsRendered++;
                 glm::mat4 transform = glm::translate(model, glm::vec3(4.0f * i, 0.0f, -4.0f * j));
                 m_gridData[indexTemp].position = glm::vec3(4.0f * i, 0.0f, -4.0f * j);
                 transform = glm::scale(transform, glm::vec3(1.0, 0.5, 1.0));
@@ -388,21 +383,20 @@ namespace Pathfinding
                 indexTemp++;
             }
         }
-        //
 
-        // Obstacle
         m_obstacles.resize(m_obstaclesIndexes.size());
         size_t currentObstacleIndex = 0;
         for (auto &index : m_obstaclesIndexes)
         {
+            m_statsObjectsRendered++;
             m_obstacles[currentObstacleIndex].position = m_gridData[index].position;
             m_obstacles[currentObstacleIndex].transform = glm::translate(glm::mat4(1), m_obstacles[currentObstacleIndex].position + glm::vec3(0.0f, 1.5f, 0.0f));
             currentObstacleIndex++;
         }
-        //
+
 
         std::vector<float> randomColors;
-        for (int c = 0; c <= 255; c += NUMBER_OF_AGENTS)
+        for (int c = 0; c <= 255; c += (GRID_ROW/NUMBER_OF_AGENTS))
         {
             randomColors.push_back(c);
         }
@@ -411,7 +405,8 @@ namespace Pathfinding
         m_agents.resize(NUMBER_OF_AGENTS);
         for (int i = 0; i < m_agents.size(); i++)
         {
-            m_agents[i].color = glm::vec4(((float)randomColors[m_agents.size() - 1 - i]) / 255.0f, ((float)randomColors[i + 1]) / 255.0f, ((float)randomColors[i]) / 255.0f, 1.0f);
+            m_statsObjectsRendered++;
+            m_agents[i].color = glm::vec4(((float)randomColors[m_agents.size() - 1 - i])/ 255.0f, ((float)randomColors[i + 1]) / 255.0f, ((float)randomColors[i]) / 255.0f, 1.0f);
             m_agents[i].position = m_gridData[m_grid[i].start].position;
             m_agents[i].transform = glm::translate(glm::mat4(1), m_agents[i].position + glm::vec3(0.0f, 1.5f, 0.0f));
         }
@@ -499,7 +494,6 @@ namespace Pathfinding
             }
         }
 
-        // Blocked Cubes Paths
 
         for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -536,8 +530,6 @@ namespace Pathfinding
                 vkUpdateDescriptorSets(m_device->LogicalDeviceHandle(), 1, &descriptorWrite, 0, nullptr);
             }
         }
-
-        // Agents
 
         for (size_t i = 0; i < m_swapchain->MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -653,7 +645,8 @@ namespace Pathfinding
     {
         VkDeviceSize bufferSize = sizeof(GridData) * NUMBER_OF_AGENTS;
         VkDeviceSize bufferSize2 = sizeof(Path) * NUMBER_OF_AGENTS;
-        // APP_ERROR("SIZE : {}", bufferSize);
+
+
         VkBufferCreateInfo bufferInfo = {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -727,7 +720,6 @@ namespace Pathfinding
 
     void Application::BuildComputeCommands()
     {
-        // Compute command buffer
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         vkBeginCommandBuffer(m_computeCommandBuffer, &beginInfo);
@@ -762,14 +754,12 @@ namespace Pathfinding
     void Application::CalculateCompute()
     {
         {
-
             VkSubmitInfo submitInfo2 = {};
             submitInfo2.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submitInfo2.commandBufferCount = 1;
             submitInfo2.pCommandBuffers = &m_computeCommandBuffer;
-
             vkQueueSubmit(m_device->GraphicsQueueHandle(), 1, &submitInfo2, VK_NULL_HANDLE);
-            Timer time(true, "GPU Pathfinding", _time);
+            Timer time(true, "GPU Pathfinding");
             vkQueueWaitIdle(m_device->GraphicsQueueHandle());
         }
 

@@ -20,8 +20,6 @@ public:
     static bool KeyPressed(int key);
     static bool KeyPressedOnce(int key);
 
-
-
     static std::unordered_map<int, KeyStatus> s_KeyStatus;
 
 };

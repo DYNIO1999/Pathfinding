@@ -53,22 +53,22 @@ struct CameraUBO{
 
 struct GlobalCameraData{
     VkDescriptorSet descriptors[2];
-    std::unique_ptr<VulkanBuffer> cameraUBOs[2]; //cause 2 frames in flight
+    std::unique_ptr<VulkanBuffer> cameraUBOs[2]; 
 };
 
 struct ModelData{
-    glm::mat4 transform; //To uniform buffer
+    glm::mat4 transform; 
 
     bool isPassable{true};
     int index;
     glm::vec3 position{0.0f,0.0f,0.0f};
     glm::vec4 color{0.47, 0.47, 0.48, 1.0};
     VkDescriptorSet descriptors[2];
-    std::unique_ptr<VulkanBuffer> modelUBOs[2]; // cause 2 frames in flight
+    std::unique_ptr<VulkanBuffer> modelUBOs[2]; 
 };
 
 struct AgentGraphicData{
-    glm::mat4 transform; //To uniform buffer
+    glm::mat4 transform;
 
     glm::vec3 position{0.0f, 0.0f, 0.0f};
     glm::vec4 color;
@@ -119,7 +119,7 @@ struct AgentGraphicData{
 
 
 struct ObstacleGraphicData{
-    glm::mat4 transform; //To uniform buffer
+    glm::mat4 transform; 
 
     glm::vec3 position{0.0f, 0.0f, 0.0f};
     glm::vec4 color{0.0, 0.0, 0.0, 1.0};
@@ -200,9 +200,6 @@ private:
 
     std::unique_ptr<Camera> m_camera;
 
-    
-    //compute Testing
-
     void CreateComputePipelineLayout();
     void CreateComputePipeline(const std::string& shaderPath);
     void CreateComputeStorageBuffers();
@@ -218,16 +215,11 @@ private:
     VkDescriptorPool m_descriptorPoolCompute;
     ShaderStorageBufferObject m_ssbObjects[2];
 
-   
-    //Testing
-
     std::vector<int> m_obstaclesIndexes;
     std::vector<ObstacleGraphicData> m_obstacles;
     std::vector<AgentGraphicData> m_agents;
 
-    //void TestingAbstraction();
     void InitGrids();
-
 
     std::vector<GridData> m_grid;
     void ResolvePath();
@@ -243,6 +235,8 @@ private:
     Path* m_pathGPU{nullptr};
     GridData* m_gridGPU{nullptr};
     float _time{0.0f};
+
+    int m_statsObjectsRendered{0};
 };
 }
 #endif

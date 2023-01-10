@@ -5,8 +5,8 @@
 namespace Pathfinding
 {
 
-    constexpr size_t GRID_ROW = 40;
-    constexpr size_t GRID_COLUMN = 40;
+    constexpr size_t GRID_ROW = 30;
+    constexpr size_t GRID_COLUMN = 30;
     constexpr size_t NUMBER_OF_AGENTS =GRID_ROW/3;
     
     constexpr int NORMAL_COST =10;
@@ -18,11 +18,11 @@ namespace Pathfinding
     {
         int i;
         int j;
-        int previousNode; //Id of previous node to reconstruct path
-        float Fcost; // GCost + HCost
-        float Hcost; // Distance to End Node
-        float Gcost; // Distance to Start Node
-        int passable; //Passable or Impassable
+        int previousNode; 
+        float Fcost; 
+        float Hcost; 
+        float Gcost; 
+        int passable; 
         int ID;
         int neighbours[8];
     };

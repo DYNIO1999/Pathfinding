@@ -68,7 +68,7 @@ private:
     
     
     VulkanAllocator& m_vulkanAllocatorRef;
-    //Depth
+    
     std::vector<VkImage> m_depthImages;
     std::vector<VmaAllocation> m_depthImageAllocations;
     std::vector<VkImageView> m_depthImageViews;

@@ -5,7 +5,6 @@
 #include "../core/Logger.h"
 namespace Pathfinding{
 
-class VulkanVertexInputDescriptionBuilder;
 
 enum class VulkanBufferType: uint8_t{
     VERTEX_BUFFER,
@@ -13,6 +12,8 @@ enum class VulkanBufferType: uint8_t{
     UNIFORM_BUFFER,
     STORAGE_BUFFER
 };
+
+class VulkanVertexInputDescriptionBuilder;
 
 class VulkanVertexInputDescription
 {
@@ -99,10 +100,6 @@ public:
         uint64_t sizeInBytes);
 
     ~VulkanBuffer();
-
-    //void UpdateData(void* data, uint64_t sizeInBytes);
-    //void MapData();
-
 
     VkBuffer& BufferHandle(){return m_bufferHandle;}
     

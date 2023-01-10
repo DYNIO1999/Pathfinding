@@ -13,7 +13,7 @@ namespace Pathfinding{
         ~Window();
         void ProcessEvents();
         bool IsOpen() const { return !glfwWindowShouldClose(m_windowHandle);}
-        //void GetSurface();
+        
         GLFWwindow* GetWindowHandle() const {return m_windowHandle;}
 
         static void WindowCloseCallback(GLFWwindow *window);
@@ -21,15 +21,11 @@ namespace Pathfinding{
         void CreateSurface(VkSurfaceKHR* surface);
         std::pair<int, int> WindowSize() { return {m_width, m_heigth}; }
 
-    private:
-    private:
-        
+    private:        
         int m_width;
         int m_heigth;
         std::string m_title;
         GLFWwindow* m_windowHandle;
-
-        
     };    
 }
 #endif

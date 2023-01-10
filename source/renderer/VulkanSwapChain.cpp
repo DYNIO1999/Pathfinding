@@ -94,9 +94,7 @@ namespace Pathfinding
         }
 
         presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-
-        // VK_PRESENT_MODE_IMMEDIATE_KHR; // If V-Sync off
-        // VK_PRESENT_MODE_FIFO_KHR if VSync on
+        
         for (auto &it : swapChainSupportInfo.presentModes)
         {
 

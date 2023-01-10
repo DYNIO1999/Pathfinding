@@ -48,7 +48,6 @@ namespace Pathfinding{
                     currentIDBack = grid.nodes[currentIDBack].previousNode;
                 }
                 path.push_back(grid.start);
-                //path.erase(path.begin());
                 break;
             }
 
@@ -103,10 +102,6 @@ namespace Pathfinding{
                 grid.nodes[FindIndex(i, j)].previousNode = -1;
             }
         }
-
-        //done = true;
-    
-
         return path;
     }
 

@@ -106,8 +106,6 @@ namespace Pathfinding
 
         vkGetDeviceQueue(m_logicalDeviceHandle, m_queueFamilyIndices.graphicsFamily.value(), 0, &m_graphicsQueueHandle);
         vkGetDeviceQueue(m_logicalDeviceHandle, m_queueFamilyIndices.presentFamily.value(), 0, &m_presentQueueHandle);
-
-        //APP_INFO("QUEUE GRAPHICS: {} , QUEUE PRESENT: {}", queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value());
     }
 
     void VulkanDevice::CreateCommandPool(){

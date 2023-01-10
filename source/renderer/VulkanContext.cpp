@@ -3,21 +3,6 @@
 
 namespace Pathfinding{
 
-    //// And this is the callback that the validator will call
-    //VkBool32
-    //myDebugCallback(VkDebugReportFlagsEXT flags,
-    //                VkDebugReportObjectTypeEXT objectType,
-    //                uint64_t object,
-    //                size_t location,
-    //                int32_t messageCode,
-    //                const char *pLayerPrefix,
-    //                const char *pMessage,
-    //                void *pUserData)
-    //{
-//
-    //    printf("debugPrintfEXT: %s", pMessage);
-    //    return false;
-    //}
     VkInstance VulkanContext::m_vulkanInstanceHandle = VK_NULL_HANDLE;
 
     VulkanContext::VulkanContext(){
